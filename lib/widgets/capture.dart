@@ -22,7 +22,12 @@ class CaptureSection extends StatelessWidget {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text("Patient Information"),
-          content: PatientForm(),
+          content: PatientForm(
+            onSubmit: (patientData) {
+              ApiService.submitPatientData(patientData, context);
+              Navigator.of(context).pop();
+            },
+          ),
           actions: _buildDialogActions(context),
         );
       },
@@ -35,13 +40,6 @@ class CaptureSection extends StatelessWidget {
       TextButton(
         onPressed: () => Navigator.of(context).pop(),
         child: Text("Cancel"),
-      ),
-      ElevatedButton(
-        onPressed: () {
-          // Handle form submission logic here
-          Navigator.of(context).pop();
-        },
-        child: Text("Submit"),
       ),
     ];
   }
@@ -83,7 +81,7 @@ class CaptureSection extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildLiveFeedContainer(),
+          _buildLiveFeedContainer(context),
           _buildButtons(context),
         ],
       ),
@@ -91,14 +89,23 @@ class CaptureSection extends StatelessWidget {
   }
 
   // Live feed container
-  Widget _buildLiveFeedContainer() {
+  Widget _buildLiveFeedContainer(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+
+    double containerWidth = screenWidth * 0.75;
+    double containerHeight = screenHeight * 0.55;
+
     return Container(
       margin: EdgeInsets.all(15),
-      width: 1200,
-      height: 600,
+      width: containerWidth,
+      height: containerHeight,
       color: Colors.grey,
       child: Center(
-        child: Text("Live Feed", style: TextStyle(color: Colors.white, fontSize: 50.0)),
+        child: Text(
+          "Live Feed",
+          style: TextStyle(color: Colors.white, fontSize: 50.0),
+        ),
       ),
     );
   }
@@ -106,6 +113,10 @@ class CaptureSection extends StatelessWidget {
 
 // Patient Form Widget
 class PatientForm extends StatefulWidget {
+  final Function(Map<String, dynamic>) onSubmit;
+
+  const PatientForm({super.key, required this.onSubmit});
+
   @override
   _PatientFormState createState() => _PatientFormState();
 }
@@ -114,8 +125,8 @@ class _PatientFormState extends State<PatientForm> {
   final _formKey = GlobalKey<FormState>();
   String _firstName = '';
   String _lastName = '';
-  DateTime _dob = DateTime.now();
-  String _gender = 'Male';
+  DateTime? _dob;
+  String _gender = '';
 
   @override
   Widget build(BuildContext context) {
@@ -126,10 +137,10 @@ class _PatientFormState extends State<PatientForm> {
         children: [
           _buildTextField("First Name", (value) => _firstName = value ?? ''),
           _buildTextField("Last Name", (value) => _lastName = value ?? ''),
-          _buildTextField("Date of Birth", (value) {
-            if (value != null) _dob = DateTime.parse(value);
-          }),
+          _buildDOBField(),
           _buildGenderDropdown(),
+          // Submit Button for the form
+          _buildSubmitButton(context),
         ],
       ),
     );
@@ -138,7 +149,10 @@ class _PatientFormState extends State<PatientForm> {
   // Common text field builder
   Widget _buildTextField(String label, Function(String?) onSaved) {
     return TextFormField(
-      decoration: InputDecoration(labelText: label),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: 'Enter $label',
+      ),
       onSaved: onSaved,
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -149,13 +163,44 @@ class _PatientFormState extends State<PatientForm> {
     );
   }
 
-  // Gender dropdown builder
+  // Date of Birth field
+  Widget _buildDOBField() {
+    return TextFormField(
+      decoration: InputDecoration(
+        labelText: 'Date of Birth',
+        hintText: _dob == null ? 'Select DOB' : _dob!.toLocal().toString().split(' ')[0],
+      ),
+      onTap: () async {
+        DateTime? pickedDate = await showDatePicker(
+          context: context,
+          initialDate: _dob ?? DateTime.now(),
+          firstDate: DateTime(1900),
+          lastDate: DateTime.now(),
+        );
+        if (pickedDate != null) {
+          setState(() {
+            _dob = pickedDate;
+          });
+        }
+      },
+      controller: TextEditingController(text: _dob == null ? '' : _dob!.toLocal().toString().split(' ')[0]),
+      readOnly: true,
+      validator: (value) {
+        if (_dob == null) {
+          return 'Please select a date of birth';
+        }
+        return null;
+      },
+    );
+  }
+
+  // Gender dropdown
   Widget _buildGenderDropdown() {
     return DropdownButtonFormField<String>(
-      value: _gender,
+      value: _gender.isEmpty ? null : _gender,
       onChanged: (value) {
         setState(() {
-          _gender = value ?? 'Male';
+          _gender = value ?? '';
         });
       },
       items: ['Male', 'Female'].map((String gender) {
@@ -164,7 +209,47 @@ class _PatientFormState extends State<PatientForm> {
           child: Text(gender),
         );
       }).toList(),
-      decoration: InputDecoration(labelText: 'Gender'),
+      decoration: InputDecoration(
+        labelText: 'Gender',
+        hintText: 'Select Gender',
+      ),
+    );
+  }
+
+  // Handle form submission
+  void _handleSubmit() {
+    final formState = _formKey.currentState;
+    if (formState?.validate() ?? false) {
+      formState?.save();
+      Map<String, dynamic> patientData = {
+        'first_name': _firstName,
+        'last_name': _lastName,
+        'dob': _dob?.toIso8601String(),
+        'gender': _gender,
+      };
+      widget.onSubmit(patientData); // Pass data to CaptureSection
+    }
+  }
+
+  // Submit button for the form
+  Widget _buildSubmitButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: ElevatedButton(
+          onPressed: _handleSubmit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: utsaOrange,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(40),
+            ),
+          ),
+          child: Text("Submit", style: TextStyle(fontSize: 18)),
+        ),
+      ),
     );
   }
 }

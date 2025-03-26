@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/services/api.dart';
 
 class PatientLookupScreen extends StatefulWidget {
   @override
@@ -7,18 +8,58 @@ class PatientLookupScreen extends StatefulWidget {
 
 class _PatientLookupScreenState extends State<PatientLookupScreen> {
   final TextEditingController _controller = TextEditingController();
-  String _patientResult = '';  // To hold the search result
+  List<dynamic> _patients = [];
+  String _patientResult = '';
 
-  void _performSearch() {
+  @override
+  void initState() {
+    super.initState();
+    _fetchPatients();
+  }
+
+  Future<void> _fetchPatients() async {
+    List<dynamic> patients = await ApiService.fetchPatients(context);
     setState(() {
-      _patientResult = "Found patient: ${_controller.text}";
+      _patients = patients;
     });
   }
+
+  void _performSearch() {
+    String query = _controller.text.trim().toLowerCase();
+
+    if (query.isEmpty) {
+      setState(() {
+        _patientResult = "Please enter a patient ID, first name, or last name.";
+      });
+      return;
+    }
+
+    var matches = _patients.where((patient) {
+      String firstName = patient['first_name']?.toLowerCase() ?? '';
+      String lastName = patient['last_name']?.toLowerCase() ?? '';
+      String id = patient['id'] ?? '';
+
+      // Match by first name, last name, or ID
+      return firstName.contains(query) || lastName.contains(query) || id == query;
+    }).toList();
+
+    setState(() {
+    if (matches.isNotEmpty) {
+      _patientResult = matches
+          .map((patient) => "${patient['first_name']} ${patient['last_name']} (ID: ${patient['id']})")
+          .join("\n"); // Display all matches
+    } else {
+      _patientResult = "No matching patient found.";
+    }
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Patient Lookup")),
+      appBar: AppBar(
+          title: Text("Patient Lookup", style: TextStyle(color: Colors.white))),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -34,7 +75,6 @@ class _PatientLookupScreenState extends State<PatientLookupScreen> {
     );
   }
 
-  // TextField
   Widget _buildTextField() {
     return TextField(
       controller: _controller,
@@ -42,22 +82,25 @@ class _PatientLookupScreenState extends State<PatientLookupScreen> {
     );
   }
 
-  // Search Button
   Widget _buildSearchButton() {
     return ElevatedButton(
       onPressed: _performSearch,
+      style: ElevatedButton.styleFrom(
+        minimumSize: Size(200, 60),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        textStyle: TextStyle(fontSize: 18),
+        backgroundColor: Color(0xFFF0F0F0),
+      ),
       child: Text('Search'),
     );
   }
 
-  // Displaying the result
   Widget _buildPatientResult() {
-    if (_patientResult.isNotEmpty) {
-      return Text(
-        _patientResult,
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      );
-    }
-    return Container();  // Return an empty container if no result
+    return _patientResult.isNotEmpty
+        ? Text(
+            _patientResult,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          )
+        : Container();
   }
 }

@@ -22,4 +22,41 @@ class ApiService {
     }
     return [];
   }
+
+  static Future<List<dynamic>> fetchPatients(BuildContext context) async {
+    final String apiUrl = "$apiBaseUrl/patients";
+
+    try {
+      final url = Uri.parse(apiUrl);
+      final response = await http.get(url, headers: {"Connection": "close"});
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("An Error occurred: $e")));
+    }
+    return [];
+  }
+
+  static Future<void> submitPatientData(Map<String, dynamic> patientData, BuildContext context) async {
+    final String apiUrl = "$apiBaseUrl/patients";
+
+    try {
+      final url = Uri.parse(apiUrl);
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(patientData),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Patient Added Successfully!")));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to Add Patient")));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("An Error occurred: $e")));
+    }
+  }
 }
