@@ -4,7 +4,7 @@ import 'package:namer_app/widgets/theme.dart';
 
 PreferredSizeWidget customAppBar(Function onItemTapped, int selectedIndex) {
   return AppBar(
-    toolbarHeight: 180,
+    toolbarHeight: 150,
     backgroundColor: utsaOrange,
     elevation: 0,
     title: _CustomAppBarContent(onItemTapped: onItemTapped),
@@ -33,7 +33,7 @@ class _CustomAppBarContent extends StatelessWidget {
 
   Positioned _buildPositionedLogo(double screenHeight, double screenWidth) {
     return Positioned(
-      top: screenHeight * -0.138,  // Padding
+      top: screenHeight * -0.13,  // Padding
       left: screenWidth * -0.04,
       child: SvgPicture.asset(
         'assets/images/O.D.D..svg',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '/services/api.dart';
 import '/widgets/theme.dart';
+import '/screen/video_stream_page.dart';
 
 class CaptureSection extends StatelessWidget {
   final Function(List<dynamic>) updateCapturedImages;
@@ -57,15 +58,20 @@ class CaptureSection extends StatelessWidget {
   }
 
   // Button styling
-  Widget _buildActionButton(String label, VoidCallback onPressed) {
-    return SizedBox(
+  Widget _buildActionButton(String label, VoidCallback onPressed) 
+  {
+    return SizedBox
+    (
       width: 350,
       height: 100,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
+      child: ElevatedButton
+      (
+        style: ElevatedButton.styleFrom
+        (
           backgroundColor: utsaOrange,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
+          shape: RoundedRectangleBorder
+          (
             borderRadius: BorderRadius.circular(40),
           ),
         ),
@@ -97,16 +103,11 @@ class CaptureSection extends StatelessWidget {
     double containerHeight = screenHeight * 0.55;
 
     return Container(
-      margin: EdgeInsets.all(15),
+      margin: const EdgeInsets.all(15),
       width: containerWidth,
       height: containerHeight,
-      color: Colors.grey,
-      child: Center(
-        child: Text(
-          "Live Feed",
-          style: TextStyle(color: Colors.white, fontSize: 50.0),
-        ),
-      ),
+      color: const Color.fromARGB(0, 158, 158, 158),
+      child: const VideoStreamPage(),
     );
   }
 }
@@ -203,15 +204,15 @@ class _PatientFormState extends State<PatientForm> {
           _gender = value ?? '';
         });
       },
-      items: ['Male', 'Female'].map((String gender) {
+      items: ['Male', 'Female'].map((String sex) {
         return DropdownMenuItem<String>(
-          value: gender,
-          child: Text(gender),
+          value: sex,
+          child: Text(sex),
         );
       }).toList(),
       decoration: InputDecoration(
-        labelText: 'Gender',
-        hintText: 'Select Gender',
+        labelText: 'Sex',
+        hintText: 'Select Option',
       ),
     );
   }
@@ -225,7 +226,7 @@ class _PatientFormState extends State<PatientForm> {
         'first_name': _firstName,
         'last_name': _lastName,
         'dob': _dob?.toIso8601String(),
-        'gender': _gender,
+        'sex': _gender,
       };
       widget.onSubmit(patientData); // Pass data to CaptureSection
     }
