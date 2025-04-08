@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart' as dotenv;
 import 'screen/history_screen.dart';
 import 'widgets/theme.dart';
 
 void main() async {
-  await dotenv.load(fileName: "/home/riofrio/ODD/oral_detection_device/.env");
-  print('CAPTURE_API_URL: ${dotenv.env['CAPTURE_API_URL']}');
-  print('SOCKET_IO_URL: ${dotenv.env['SOCKET_IO_URL']}');
-  print('API_BASE_URL: ${dotenv.env['API_BASE_URL']}');
+  // Try loading .env for local development, fall back to --dart-define
+  try {
+    await dotenv.dotenv.load(fileName: "/home/riofrio/ODD/oral_detection_device/.env");
+  } catch (e) {
+    print('No .env file found, using --dart-define: $e');
+  }
   runApp(MyApp());
 }
 

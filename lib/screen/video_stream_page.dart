@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart' as dotenv;
 import '../widgets/theme.dart';
 
 class VideoStreamPage extends StatefulWidget {
@@ -25,9 +25,9 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
 
   void _connectToSocketIO() {
     try {
-      String socketIoUrl = dotenv.env['SOCKET_IO_URL'] ?? 'http://192.168.157.225:3000/stream';
+      String socketIoUrl = dotenv.dotenv.env['SOCKET_IO_URL'] ?? const String.fromEnvironment('SOCKET_IO_URL', defaultValue: 'http://192.168.157.225:3000/stream');
       _socket = IO.io(socketIoUrl, <String, dynamic>{
-        'transports': ['websocket'],
+        'transports': ['websocket'], // Web uses WebSocket by default
         'autoConnect': false,
         'reconnection': true,
         'reconnectionAttempts': 5,
@@ -52,8 +52,6 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
           } catch (e) {
             debugPrint('Error decoding base64 frame: $e');
           }
-        } else {
-          debugPrint('Invalid frame data received');
         }
       });
 
@@ -63,11 +61,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
       });
 
       _socket.onError((error) {
-        setState(() => _isConnected = false);
         debugPrint('Socket.IO Error: $error');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Socket.IO Error: $error')),
-        );
       });
 
       _socket.onConnectError((error) {
@@ -100,7 +94,6 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
               ? Image.memory(
                   _currentFrame!,
                   gaplessPlayback: true,
-                  height: double.infinity,
                   fit: BoxFit.cover,
                 )
               : SizedBox(
