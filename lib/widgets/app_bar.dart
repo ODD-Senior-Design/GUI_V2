@@ -4,7 +4,7 @@ import 'package:namer_app/widgets/theme.dart';
 
 PreferredSizeWidget customAppBar(Function onItemTapped, int selectedIndex) {
   return AppBar(
-    toolbarHeight: 150,
+    toolbarHeight: 130,
     backgroundColor: utsaOrange,
     elevation: 0,
     title: _CustomAppBarContent(onItemTapped: onItemTapped),
