@@ -22,7 +22,7 @@ class CaptureSection extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text("Patient Information"),
+          title: const Text("Patient Information"),
           content: PatientForm(
             onSubmit: (patientData) {
               ApiService.submitPatientData(patientData, context);
@@ -40,43 +40,65 @@ class CaptureSection extends StatelessWidget {
     return [
       TextButton(
         onPressed: () => Navigator.of(context).pop(),
-        child: Text("Cancel"),
+        child: const Text("Cancel"),
       ),
     ];
   }
 
   // Building the buttons
   Widget _buildButtons(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _buildActionButton("Add Patient", () => _showPatientForm(context)),
-        SizedBox(width: 20), // Space between buttons
-        _buildActionButton("Capture Picture", () => _capturePicture(context)),
+        _buildActionButton(
+          context,
+          "Add Patient",
+          () => _showPatientForm(context),
+          screenWidth,
+          screenHeight,
+        ),
+        SizedBox(width: screenWidth * 0.05), // 5% of screen width
+        _buildActionButton(
+          context,
+          "Capture Picture",
+          () => _capturePicture(context),
+          screenWidth,
+          screenHeight,
+        ),
       ],
     );
   }
 
   // Button styling
-  Widget _buildActionButton(String label, VoidCallback onPressed) 
-  {
-    return SizedBox
-    (
-      width: 350,
-      height: 100,
-      child: ElevatedButton
-      (
-        style: ElevatedButton.styleFrom
-        (
+  Widget _buildActionButton(
+    BuildContext context,
+    String label,
+    VoidCallback onPressed,
+    double screenWidth,
+    double screenHeight,
+  ) {
+    return SizedBox(
+      width: screenWidth * 0.25, // 25% of screen width
+      height: screenHeight * 0.1, // 10% of screen height
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
           backgroundColor: utsaOrange,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder
-          (
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(40),
           ),
+          padding: const EdgeInsets.all(8),
         ),
         onPressed: onPressed,
-        child: Text(label, style: TextStyle(fontSize: 40.0)),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: (screenWidth * 0.03).clamp(16, 40), // 5% of width, min 16px, max 40px
+          ),
+        ),
       ),
     );
   }
@@ -88,6 +110,7 @@ class CaptureSection extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _buildLiveFeedContainer(context),
+          const SizedBox(height: 20),
           _buildButtons(context),
         ],
       ),
@@ -131,6 +154,7 @@ class _PatientFormState extends State<PatientForm> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return Form(
       key: _formKey,
       child: Column(
@@ -140,8 +164,7 @@ class _PatientFormState extends State<PatientForm> {
           _buildTextField("Last Name", (value) => _lastName = value ?? ''),
           _buildDOBField(),
           _buildGenderDropdown(),
-          // Submit Button for the form
-          _buildSubmitButton(context),
+          _buildSubmitButton(context, screenWidth),
         ],
       ),
     );
@@ -184,7 +207,8 @@ class _PatientFormState extends State<PatientForm> {
           });
         }
       },
-      controller: TextEditingController(text: _dob == null ? '' : _dob!.toLocal().toString().split(' ')[0]),
+      controller: TextEditingController(
+          text: _dob == null ? '' : _dob!.toLocal().toString().split(' ')[0]),
       readOnly: true,
       validator: (value) {
         if (_dob == null) {
@@ -210,7 +234,7 @@ class _PatientFormState extends State<PatientForm> {
           child: Text(sex),
         );
       }).toList(),
-      decoration: InputDecoration(
+      decoration: const InputDecoration(
         labelText: 'Sex',
         hintText: 'Select Option',
       ),
@@ -228,17 +252,17 @@ class _PatientFormState extends State<PatientForm> {
         'dob': _dob?.toIso8601String(),
         'sex': _gender,
       };
-      widget.onSubmit(patientData); // Pass data to CaptureSection
+      widget.onSubmit(patientData);
     }
   }
 
   // Submit button for the form
-  Widget _buildSubmitButton(BuildContext context) {
+  Widget _buildSubmitButton(BuildContext context, double screenWidth) {
     return Padding(
       padding: const EdgeInsets.only(top: 20),
       child: SizedBox(
-        width: double.infinity,
-        height: 50,
+        width: screenWidth * 0.15, // 15% of screen width
+        height: screenWidth * 0.05, // Scales with width
         child: ElevatedButton(
           onPressed: _handleSubmit,
           style: ElevatedButton.styleFrom(
@@ -248,7 +272,12 @@ class _PatientFormState extends State<PatientForm> {
               borderRadius: BorderRadius.circular(40),
             ),
           ),
-          child: Text("Submit", style: TextStyle(fontSize: 18)),
+          child: Text(
+            "Submit",
+            style: TextStyle(
+              fontSize: (screenWidth * 0.05).clamp(14, 24), // 5% of width, min 14px, max 24px
+            ),
+          ),
         ),
       ),
     );

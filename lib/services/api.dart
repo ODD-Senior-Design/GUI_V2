@@ -42,6 +42,8 @@ class ApiService {
 
   static Future<List<dynamic>> fetchPatients(BuildContext context) async {
     final String apiUrl = "$apiBaseUrl/patients";
+    // final String apiUrl = "https://api.ranga-family.com/patients";
+
 
     try {
       final url = Uri.parse(apiUrl);
