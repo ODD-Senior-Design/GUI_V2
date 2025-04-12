@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiService {
-  static String get apiBaseUrl => dotenv.env['API_BASE_URL'] ?? 'https://api.ranga-family.com';
-  static String get captureApiUrl => dotenv.env['CAPTURE_API_URL'] ?? 'http://192.168.157.225:3000/capture';
+  static String apiBaseUrl = dotenv.get('API_BASE_URL', 'https://api.ranga-family.com');
+  static String get captureApiUrl => dotenv.env['CAPTURE_API_URL'] ?? 'http://127.0.0.1:3000/capture';
+  static String get socketIoUrl => dotenv.env['SOCKET_IO_URL'] ?? 'http://127.0.0.1:3000';
 
   static Future<List<dynamic>> capturePicture(BuildContext context) async {
     debugPrint('Using captureApiUrl: $captureApiUrl');
