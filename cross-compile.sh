@@ -44,5 +44,6 @@ docker run --rm --platform "$PLATFORM" \
 echo "📁 Copying build output..."
 rm -rf "$OUTPUT_DIR"
 cp -r build/linux/arm64/release/bundle "$OUTPUT_DIR"
+cp .env "$OUTPUT_DIR/.env"
 
 echo "✅ Done! ARM64 build is ready at: $OUTPUT_DIR"

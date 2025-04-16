@@ -15,3 +15,4 @@ RUN git clone https://github.com/flutter/flutter.git /opt/flutter
 
 # Preconfigure Flutter
 RUN flutter config --enable-linux-desktop
+

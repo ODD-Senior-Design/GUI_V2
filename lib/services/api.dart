@@ -3,14 +3,20 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart' as dotenv;
 class ApiService {
-  static String get apiBaseUrl => dotenv.dotenv.env['API_BASE_URL'] ?? 'https://api.ranga-family.com';
-  static String get captureApiUrl => dotenv.dotenv.env['CAPTURE_API_URL'] ?? 'http://127.0.0.1:3000/capture';
-  static String get socketIoUrl => dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://127.0.0.1:3000';
+  static String get apiBaseUrl => dotenv.dotenv.isInitialized
+      ? dotenv.dotenv.env['API_BASE_URL'] ?? 'https://api.ranga-family.com'
+      : 'https://api.ranga-family.com';  
+  // static String get socketIoUrl => dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://127.0.0.1:3000/stream';
+
+  static String get socketIoUrl => dotenv.dotenv.isInitialized
+      ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://127.0.0.1:3000/stream'
+      : 'http://127.0.0.1:3000/stream';  
+
 
   static Future<List<dynamic>> capturePicture(BuildContext context) async {
-    debugPrint('Using captureApiUrl: $captureApiUrl');
+    debugPrint('Using apiBaseUrl: $apiBaseUrl');
     try {
-      final url = Uri.parse(captureApiUrl);
+      final url = Uri.parse('$apiBaseUrl/images');
       final response = await http.post(
         url,
         headers: {
@@ -42,8 +48,6 @@ class ApiService {
 
   static Future<List<dynamic>> fetchPatients(BuildContext context) async {
     final String apiUrl = "$apiBaseUrl/patients";
-    // final String apiUrl = "https://api.ranga-family.com/patients";
-
 
     try {
       final url = Uri.parse(apiUrl);
