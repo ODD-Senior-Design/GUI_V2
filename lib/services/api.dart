@@ -2,11 +2,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart' as dotenv;
+import 'dart:io';
 class ApiService {
   static String get apiBaseUrl => dotenv.dotenv.isInitialized
       ? dotenv.dotenv.env['API_BASE_URL'] ?? 'https://api.ranga-family.com'
       : 'https://api.ranga-family.com';  
-  // static String get socketIoUrl => dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://127.0.0.1:3000/stream';
 
   static String get socketIoUrl => dotenv.dotenv.isInitialized
       ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://172.20.10.5:3000/stream'
@@ -23,7 +23,11 @@ class ApiService {
           "Content-Type": "application/json",
           "Connection": "close",
         },
-        body: jsonEncode({}),
+   
+        body: jsonEncode({
+          'patient_id': '9f3f7241-41d2-4d19-8ad3-42579faaba13',
+          'set_id': 'eaf09650-210a-4cb8-8653-aa97461b338d'
+        }),
       );
 
       if (response.statusCode == 200) {
