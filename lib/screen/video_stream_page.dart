@@ -25,7 +25,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
 
   void _connectToSocketIO() {
     try {
-      String socketIoUrl = dotenv.dotenv.env['SOCKET_IO_URL'] ?? const String.fromEnvironment('SOCKET_IO_URL', defaultValue: 'http://127.0.0.1:3000/stream');
+      String socketIoUrl = dotenv.dotenv.env['SOCKET_IO_URL'] ?? const String.fromEnvironment('SOCKET_IO_URL', defaultValue: 'http://172.20.10.5:3000/stream');
       _socket = IO.io(socketIoUrl, <String, dynamic>{
         'transports': ['websocket'], // Web uses WebSocket by default
         'autoConnect': false,

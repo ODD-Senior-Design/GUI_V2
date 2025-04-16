@@ -9,8 +9,8 @@ class ApiService {
   // static String get socketIoUrl => dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://127.0.0.1:3000/stream';
 
   static String get socketIoUrl => dotenv.dotenv.isInitialized
-      ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://127.0.0.1:3000/stream'
-      : 'http://127.0.0.1:3000/stream';  
+      ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://172.20.10.5:3000/stream'
+      : 'http://172.20.10.5:3000/stream';  
 
 
   static Future<List<dynamic>> capturePicture(BuildContext context) async {

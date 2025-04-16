@@ -6,7 +6,7 @@ import 'widgets/theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await dotenv.dotenv.load(fileName: '.env');
+    await dotenv.dotenv.load(fileName: '/home/riofrio/ODD/oral_detection_device/.env');
     debugPrint('Loaded .env: ${dotenv.dotenv.env}');
   } catch (e, stackTrace) {
     debugPrint('Failed to load .env: $e\n$stackTrace');
