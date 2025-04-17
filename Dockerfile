@@ -1,32 +1,37 @@
-# Use official CirrusLabs Flutter image for version 3.29.3
-FROM ghcr.io/cirruslabs/flutter:3.29.3
+# Stage 1: Build the Flutter web app
+FROM ghcr.io/cirruslabs/flutter:3.29.3 AS builder
 
-# Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:${PATH}"
 
-# Install additional dependencies required for Linux desktop builds
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
- && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Enable web support
+RUN flutter config --enable-web
 
-# Enable Linux desktop support
-RUN flutter config --enable-linux-desktop
-
-# Set up working directory
+# Set working directory and install dependencies
 WORKDIR /app
-
-# Copy only pubspec files first for better build caching
 COPY pubspec.yaml pubspec.lock ./
 RUN flutter pub get
 
-# Copy the rest of the source code
+# Copy the rest of the Flutter project
 COPY . .
 
-# Create a non-root user (UID 1000) and switch to it
-# RUN useradd -m -u 1000 flutteruser && \
-#     chown -R flutteruser:flutteruser /app /opt/flutter
-# USER flutteruser
+# Write a hardcoded env.dart file
+# RUN echo "\
+# const String capturePictureUrl = 'http://localhost:3000?images';\n\
+# const String socketIoUrl = 'http://localhost:3000/stream';\n\
+# const String apiBaseUrl = 'https://api.ranga-family.com';\n\
+# " > lib/env.dart
 
-# Build for Linux (arm64 target supported within this container)
-CMD [ "flutter", "build", "linux", "--release" ]
+# Build Flutter for the web (release mode)
+RUN flutter build web --release
+
+# Stage 2: Serve with Caddy (HTTP)
+FROM caddy:alpine
+
+# Copy the web build output to Caddy's default web root
+COPY --from=builder /app/build/web /usr/share/caddy
+
+# Expose HTTP port
+EXPOSE 80
+
+# Start Caddy (default CMD)

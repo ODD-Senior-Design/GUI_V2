@@ -1,10 +1,7 @@
-version: '3.8'
-
 services:
-  odd_gui:
-    build: .
-    container_name: odd_gui
+  flutter_web:
+    image: flutter-web-app  # image already built, or use FROM caddy directly
     ports:
-      - "8080:80"  # Maps container port 80 (Nginx) to localhost:8080
-    network_mode: host
-    restart: unless-stopped
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
