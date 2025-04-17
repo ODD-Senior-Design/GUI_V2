@@ -29,10 +29,4 @@ RUN useradd -m -u 1000 flutteruser && \
 USER flutteruser
 
 # Build for Linux (arm64 target supported within this container)
-RUN flutter build linux --release
-
-# Optional: expose port if your app uses one
-EXPOSE 8080
-
-# Run the compiled Linux binary
-CMD ["/app/build/linux/arm64/release/bundle/namer_app"]
+CMD [ "flutter", "build", "linux", "--release" ]
