@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /opt
 RUN git clone --branch ${FLUTTER_VERSION} https://github.com/flutter/flutter.git
 RUN flutter config --enable-linux-desktop
-RUN flutter doctor
+# RUN flutter doctor
 
 # Set up working directory for the Flutter app
 WORKDIR /app
