@@ -4,7 +4,7 @@ FROM arm64v8/ubuntu:22.04
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:${PATH}"
-ENV FLUTTER_VERSION=3.19.0  # Use a specific stable version
+ENV FLUTTER_VERSION=3.19.0  
 
 # Install dependencies for Flutter and Linux desktop builds
 RUN apt-get update && apt-get install -y --no-install-recommends \
