@@ -6,4 +6,5 @@ services:
     container_name: odd_gui
     ports:
       - "8080:80"  # Maps container port 80 (Nginx) to localhost:8080
+    network_mode: host
     restart: unless-stopped
