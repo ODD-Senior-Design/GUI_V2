@@ -24,9 +24,9 @@ RUN flutter pub get
 COPY . .
 
 # Create a non-root user (UID 1000) and switch to it
-RUN useradd -m -u 1000 flutteruser && \
-    chown -R flutteruser:flutteruser /app /opt/flutter
-USER flutteruser
+# RUN useradd -m -u 1000 flutteruser && \
+#     chown -R flutteruser:flutteruser /app /opt/flutter
+# USER flutteruser
 
 # Build for Linux (arm64 target supported within this container)
 CMD [ "flutter", "build", "linux", "--release" ]
