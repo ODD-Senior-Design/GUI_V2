@@ -1,195 +1,114 @@
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_dotenv/flutter_dotenv.dart' as dotenv;
-import 'dart:io';
-import 'dart:async';
+import '../widgets/theme.dart';
 
-class ApiService {
-  static String get apiBaseUrl => dotenv.dotenv.isInitialized
-      ? dotenv.dotenv.env['API_BASE_URL'] ?? 'https://api.ranga-family.com'
-      : 'https://api.ranga-family.com';
+class VideoStreamPage extends StatefulWidget {
+  const VideoStreamPage({super.key});
 
-  static String get capturePictureUrl => dotenv.dotenv.isInitialized
-      ? dotenv.dotenv.env['CAPTURE_PICTURE_URL'] ?? 'http://host.docker.internal:3000/images'
-      : 'http://host.docker.internal:3000/images';
+  @override
+  State<VideoStreamPage> createState() => _VideoStreamPageState();
+}
 
-  static String get socketIoUrl => dotenv.dotenv.isInitialized
-      ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://host.docker.internal:3000/stream'
-      : 'http://host.docker.internal:3000/stream';
+class _VideoStreamPageState extends State<VideoStreamPage> {
+  late IO.Socket _socket;
+  Uint8List? _currentFrame;
+  bool _isConnected = false;
 
-  // Utility function to convert Sets to Lists
-  static dynamic _makeSerializable(dynamic value) {
-    if (value is Set) {
-      return value.toList();
-    } else if (value is Map) {
-      return value.map((key, val) => MapEntry(key, _makeSerializable(val)));
-    } else if (value is List) {
-      return value.map(_makeSerializable).toList();
-    } else if (value is Iterable && value is! String) {
-      return value.map(_makeSerializable).toList();
-    }
-    return value;
+  @override
+  void initState() {
+    super.initState();
+    _connectToSocketIO();
   }
 
-  static Future<List<dynamic>> capturePicture(BuildContext context) async {
-    debugPrint('Using capturePictureUrl: $capturePictureUrl');
+  void _connectToSocketIO() {
     try {
-      final url = Uri.parse(capturePictureUrl);
-      final response = await http
-          .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-              'set_id': 'eaf09650-210a-4cb8-8653-aa97461b338d',
-              'patient_id': '9f3f7241-41d2-4d19-8ad3-42579faaba13',
-            }),
-          )
-          .timeout(const Duration(seconds: 10));
+      String socketIoUrl = dotenv.dotenv.isInitialized
+          ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://host.docker.internal:3000/stream'
+          : 'http://host.docker.internal:3000/stream';
+      debugPrint('Connecting to Socket.IO at: $socketIoUrl');
+      _socket = IO.io(socketIoUrl, <String, dynamic>{
+        'transports': ['websocket'],
+        'autoConnect': false,
+        'reconnection': true,
+        'reconnectionAttempts': 5,
+      });
 
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        debugPrint('Response body: ${response.body}');
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Image Captured Successfully!')),
-          );
-        }
-        return jsonResponse is List
-            ? jsonResponse
-            : jsonResponse is Map
-                ? [jsonResponse]
-                : [];
-      } else {
-        debugPrint('Error response body: ${response.body}');
-        if (context.mounted) {
-          String errorMessage =
-              'Failed to Capture Image: ${response.statusCode}';
-          if (response.body.isNotEmpty) {
-            errorMessage += ' (${response.body.substring(0, response.body.length.clamp(0, 50))})';
+      _socket.connect();
+
+      _socket.onConnect((_) {
+        setState(() => _isConnected = true);
+        debugPrint('Connected to Socket.IO server at $socketIoUrl');
+        _socket.emit('join', 'video_stream_room');
+      });
+
+      _socket.on('message', (data) {
+        debugPrint('Received video frame data: $data');
+        if (data != null && data['frame'] != null) {
+          String base64String = data['frame'].toString().split(',').last;
+          try {
+            setState(() {
+              _currentFrame = base64Decode(base64String);
+            });
+          } catch (e) {
+            debugPrint('Error decoding base64 frame: $e');
           }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMessage)),
-          );
         }
-        return [];
-      }
+      });
+
+      _socket.onDisconnect((_) {
+        setState(() => _isConnected = false);
+        debugPrint('Disconnected from Socket.IO server');
+      });
+
+      _socket.onError((error) {
+        debugPrint('Socket.IO Error: $error');
+      });
+
+      _socket.onConnectError((error) {
+        debugPrint('Connection Error: $error');
+      });
     } catch (e) {
-      debugPrint('Capture error: $e');
-      if (context.mounted) {
-        String errorMessage = 'Capture Error: $e';
-        if (e is SocketException) {
-          errorMessage = 'No internet connection. Please check your network.';
-        } else if (e is TimeoutException) {
-          errorMessage = 'Request timed out. Please try again.';
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
-      }
-      return [];
+      debugPrint('Socket initialization error: $e');
     }
   }
 
-  static Future<List<dynamic>> fetchPatients(BuildContext context) async {
-    final apiUrl = '$apiBaseUrl/patients';
-    debugPrint('Fetching patients from: $apiUrl');
-    try {
-      final url = Uri.parse(apiUrl);
-      final response =
-          await http.get(url).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        debugPrint('Response body: ${response.body}');
-        if (jsonResponse.isEmpty) {
-          debugPrint('No patients returned');
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No Patients Found')),
-            );
-          }
-        }
-        return jsonResponse is List ? jsonResponse : [];
-      } else {
-        debugPrint('Error response body: ${response.body}');
-        if (context.mounted) {
-          String errorMessage = 'Failed to Fetch Patients: ${response.statusCode}';
-          if (response.body.isNotEmpty) {
-            errorMessage += ' (${response.body.substring(0, response.body.length.clamp(0, 50))})';
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMessage)),
-          );
-        }
-        return [];
-      }
-    } catch (e) {
-      debugPrint('Fetch error: $e');
-      if (context.mounted) {
-        String errorMessage = 'Fetch Error: $e';
-        if (e is SocketException) {
-          errorMessage = 'No internet connection. Please check your network.';
-        } else if (e is TimeoutException) {
-          errorMessage = 'Request timed out. Please try again.';
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
-      }
-      return [];
-    }
+  @override
+  void dispose() {
+    _socket.disconnect();
+    _socket.dispose();
+    super.dispose();
   }
 
-  static Future<void> submitPatientData(
-      Map<String, dynamic> patientData, BuildContext context) async {
-    final apiUrl = '$apiBaseUrl/patients';
-    debugPrint('Submitting to: $apiUrl');
-    try {
-      final serializableData = _makeSerializable(patientData);
-      debugPrint('Serialized patientData: $serializableData');
-      final url = Uri.parse(apiUrl);
-      final response = await http
-          .post(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(serializableData),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Patient Added Successfully!')),
-          );
-        }
-      } else {
-        debugPrint('Error response body: ${response.body}');
-        if (context.mounted) {
-          String errorMessage = 'Failed to Add Patient: ${response.statusCode}';
-          if (response.body.isNotEmpty) {
-            errorMessage += ' (${response.body.substring(0, response.body.length.clamp(0, 50))})';
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMessage)),
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('Submit error: $e');
-      if (context.mounted) {
-        String errorMessage = 'Submit Error: $e';
-        if (e is SocketException) {
-          errorMessage = 'No internet connection. Please check your network.';
-        } else if (e is TimeoutException) {
-          errorMessage = 'Request timed out. Please try again.';
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
-      }
-    }
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          _isConnected ? 'Connected' : 'Connecting...',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: const Color.fromARGB(187, 255, 255, 255)),
+        ),
+        const SizedBox(height: 20),
+        Expanded(
+          child: _currentFrame != null
+              ? Image.memory(
+                  _currentFrame!,
+                  gaplessPlayback: true,
+                  fit: BoxFit.cover,
+                )
+              : const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: oddRed,
+                    strokeWidth: 2.5,
+                  ),
+                ),
+        ),
+      ],
+    );
   }
 }

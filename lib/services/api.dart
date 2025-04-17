@@ -2,21 +2,22 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart' as dotenv;
-import 'dart:io'; 
-import 'dart:async'; 
+import 'dart:io';
+import 'dart:async';
 
 class ApiService {
-  static String get apiBaseUrl =>
-      dotenv.dotenv.env['API_BASE_URL'] ?? 'https://api.ranga-family.com';
+  static String get apiBaseUrl => dotenv.dotenv.isInitialized
+      ? dotenv.dotenv.env['API_BASE_URL'] ?? 'https://api.ranga-family.com'
+      : 'https://api.ranga-family.com';
 
-  static String get socketIoUrl =>
-      dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://172.20.10.5:3000/stream';
+  static String get capturePictureUrl => dotenv.dotenv.isInitialized
+      ? dotenv.dotenv.env['CAPTURE_PICTURE_URL'] ?? 'http://host.docker.internal:3000/images'
+      : 'http://host.docker.internal:3000/images';
 
-  static String get capturePictureUrl =>
-      dotenv.dotenv.env['CAPTURE_PICTURE_URL'] ?? 'http://172.20.10.5:3000/images';
+  static String get socketIoUrl => dotenv.dotenv.isInitialized
+      ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://host.docker.internal:3000/stream'
+      : 'http://host.docker.internal:3000/stream';
 
-
-  // Utility function to convert Sets to Lists
   static dynamic _makeSerializable(dynamic value) {
     if (value is Set) {
       return value.toList();
@@ -55,7 +56,6 @@ class ApiService {
             const SnackBar(content: Text('Image Captured Successfully!')),
           );
         }
-        // Handle both List and Map responses
         return jsonResponse is List
             ? jsonResponse
             : jsonResponse is Map
@@ -76,9 +76,9 @@ class ApiService {
         return [];
       }
     } catch (e) {
-      debugPrint('Exception: $e');
+      debugPrint('Capture error: $e');
       if (context.mounted) {
-        String errorMessage = 'An Error occurred: $e';
+        String errorMessage = 'Capture Error: $e';
         if (e is SocketException) {
           errorMessage = 'No internet connection. Please check your network.';
         } else if (e is TimeoutException) {
@@ -94,7 +94,7 @@ class ApiService {
 
   static Future<List<dynamic>> fetchPatients(BuildContext context) async {
     final apiUrl = '$apiBaseUrl/patients';
-
+    debugPrint('Fetching patients from: $apiUrl');
     try {
       final url = Uri.parse(apiUrl);
       final response =
@@ -103,6 +103,14 @@ class ApiService {
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         debugPrint('Response body: ${response.body}');
+        if (jsonResponse.isEmpty) {
+          debugPrint('No patients returned');
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('No Patients Found')),
+            );
+          }
+        }
         return jsonResponse is List ? jsonResponse : [];
       } else {
         debugPrint('Error response body: ${response.body}');
@@ -118,9 +126,9 @@ class ApiService {
         return [];
       }
     } catch (e) {
-      debugPrint('Exception: $e');
+      debugPrint('Fetch error: $e');
       if (context.mounted) {
-        String errorMessage = 'An Error occurred: $e';
+        String errorMessage = 'Fetch Error: $e';
         if (e is SocketException) {
           errorMessage = 'No internet connection. Please check your network.';
         } else if (e is TimeoutException) {
@@ -137,11 +145,10 @@ class ApiService {
   static Future<void> submitPatientData(
       Map<String, dynamic> patientData, BuildContext context) async {
     final apiUrl = '$apiBaseUrl/patients';
-
+    debugPrint('Submitting to: $apiUrl');
     try {
       final serializableData = _makeSerializable(patientData);
       debugPrint('Serialized patientData: $serializableData');
-
       final url = Uri.parse(apiUrl);
       final response = await http
           .post(
@@ -151,7 +158,7 @@ class ApiService {
           )
           .timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Patient Added Successfully!')),
@@ -170,9 +177,9 @@ class ApiService {
         }
       }
     } catch (e) {
-      debugPrint('Exception: $e');
+      debugPrint('Submit error: $e');
       if (context.mounted) {
-        String errorMessage = 'An Error occurred: $e';
+        String errorMessage = 'Submit Error: $e';
         if (e is SocketException) {
           errorMessage = 'No internet connection. Please check your network.';
         } else if (e is TimeoutException) {
