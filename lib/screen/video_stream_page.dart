@@ -26,8 +26,8 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
   void _connectToSocketIO() {
     try {
       String socketIoUrl = dotenv.dotenv.isInitialized
-          ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://host.docker.internal:3000/stream'
-          : 'http://host.docker.internal:3000/stream';
+          ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://localhost:3000/stream'
+          : 'http://localhost:3000/stream';
       debugPrint('Connecting to Socket.IO at: $socketIoUrl');
       _socket = IO.io(socketIoUrl, <String, dynamic>{
         'transports': ['websocket'],

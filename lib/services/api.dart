@@ -7,16 +7,16 @@ import 'dart:async';
 
 class ApiService {
   static String get apiBaseUrl => dotenv.dotenv.isInitialized
-      ? dotenv.dotenv.env['API_BASE_URL'] ?? 'https://api.ranga-family.com'
-      : 'https://api.ranga-family.com';
+      ? dotenv.dotenv.env['API_BASE_URL'] ?? 'http://localhost:5000'
+      : 'http://localhost:5000';
 
   static String get capturePictureUrl => dotenv.dotenv.isInitialized
-      ? dotenv.dotenv.env['CAPTURE_PICTURE_URL'] ?? 'http://host.docker.internal:3000/images'
-      : 'http://host.docker.internal:3000/images';
+      ? dotenv.dotenv.env['CAPTURE_PICTURE_URL'] ?? 'http://localhost:3000/images'
+      : 'http://localhost:3000/images';
 
   static String get socketIoUrl => dotenv.dotenv.isInitialized
-      ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://host.docker.internal:3000/stream'
-      : 'http://host.docker.internal:3000/stream';
+      ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://localhost:3000/stream'
+      : 'http://localhost:3000/stream';
 
   static dynamic _makeSerializable(dynamic value) {
     if (value is Set) {
