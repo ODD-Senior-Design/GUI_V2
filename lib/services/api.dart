@@ -11,8 +11,8 @@ class ApiService {
       : 'http://localhost:5000';
 
   static String get capturePictureUrl => dotenv.dotenv.isInitialized
-      ? dotenv.dotenv.env['CAPTURE_PICTURE_URL'] ?? 'http://localhost:3000/images'
-      : 'http://localhost:3000/images';
+      ? dotenv.dotenv.env['CAPTURE_PICTURE_URL'] ?? 'http://localhost:5000/images'
+      : 'http://localhost:5000/images';
 
   static String get socketIoUrl => dotenv.dotenv.isInitialized
       ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://localhost:3000/stream'
