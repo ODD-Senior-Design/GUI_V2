@@ -1,0 +1,29 @@
+# Flutter build output
+build/
+.webdev/
+.dart_tool/
+
+# Dart package folders
+.packages
+pubspec.lock
+
+# IDE/editor files
+.idea/
+.vscode/
+*.iml
+
+# Mac and Linux junk files
+.DS_Store
+*.swp
+*.swo
+
+# Git files
+.git/
+.gitignore
+
+# Test, assets, and example folders if not needed in build
+test/
+example/
+
+# Logs
+*.log
