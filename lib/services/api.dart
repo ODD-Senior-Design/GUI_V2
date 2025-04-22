@@ -31,20 +31,22 @@ class ApiService {
     return value;
   }
 
-  static Future<List<dynamic>> capturePicture(BuildContext context) async {
+  static Future<List<dynamic>> capturePicture(BuildContext context, {String? patientId}) async {
     debugPrint('Using capturePictureUrl: $capturePictureUrl');
     try {
       final url = Uri.parse(capturePictureUrl);
+      final payload = {
+        'set_id': null, 
+        'patient_id': patientId,
+      };
+      debugPrint('Capture payload: $payload');
       final response = await http
           .post(
             url,
             headers: {
               'Content-Type': 'application/json',
             },
-            body: jsonEncode({
-              'set_id': 'eaf09650-210a-4cb8-8653-aa97461b338d',
-              'patient_id': '9f3f7241-41d2-4d19-8ad3-42579faaba13',
-            }),
+            body: jsonEncode(payload),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -142,7 +144,7 @@ class ApiService {
     }
   }
 
-  static Future<void> submitPatientData(
+  static Future<String?> submitPatientData(
       Map<String, dynamic> patientData, BuildContext context) async {
     final apiUrl = '$apiBaseUrl/patients';
     debugPrint('Submitting to: $apiUrl');
@@ -164,6 +166,11 @@ class ApiService {
             const SnackBar(content: Text('Patient Added Successfully!')),
           );
         }
+        // Extract patient ID from response
+        final responseData = jsonDecode(response.body);
+        final patientId = responseData['id']?.toString() ?? responseData['patient_id']?.toString();
+        debugPrint('Patient ID: $patientId');
+        return patientId;
       } else {
         debugPrint('Error response body: ${response.body}');
         if (context.mounted) {
@@ -175,6 +182,7 @@ class ApiService {
             SnackBar(content: Text(errorMessage)),
           );
         }
+        return null;
       }
     } catch (e) {
       debugPrint('Submit error: $e');
@@ -189,6 +197,43 @@ class ApiService {
           SnackBar(content: Text(errorMessage)),
         );
       }
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> fetchPatientById(String patientId, BuildContext context) async {
+    final apiUrl = '$apiBaseUrl/patients/$patientId';
+    debugPrint('Fetching patient from: $apiUrl');
+    try {
+      final url = Uri.parse(apiUrl);
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final patient = jsonDecode(response.body);
+        debugPrint('Patient fetched: $patient');
+        return patient;
+      } else {
+        debugPrint('Error response body: ${response.body}');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to Fetch Patient: ${response.statusCode}')),
+          );
+        }
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Fetch error: $e');
+      if (context.mounted) {
+        String errorMessage = 'Fetch Error: $e';
+        if (e is SocketException) {
+          errorMessage = 'No internet connection. Please check your network.';
+        } else if (e is TimeoutException) {
+          errorMessage = 'Request timed out. Please try again.';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
+      return null;
     }
   }
 }

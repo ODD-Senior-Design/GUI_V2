@@ -3,20 +3,25 @@ import '/services/api.dart';
 import '/widgets/theme.dart';
 import '/screen/video_stream_page.dart';
 
-class CaptureSection extends StatelessWidget {
+class CaptureSection extends StatefulWidget {
   final Function(List<dynamic>) updateCapturedImages;
 
   const CaptureSection({super.key, required this.updateCapturedImages});
 
-  // Capture picture functionality
+  @override
+  _CaptureSectionState createState() => _CaptureSectionState();
+}
+
+class _CaptureSectionState extends State<CaptureSection> {
+  String? _activePatientId;
+
   void _capturePicture(BuildContext context) async {
     List<dynamic> newImages = await ApiService.capturePicture(context);
     if (newImages.isNotEmpty) {
-      updateCapturedImages(newImages);
+      widget.updateCapturedImages(newImages);
     }
   }
 
-  // Show patient form dialog
   void _showPatientForm(BuildContext context) {
     showDialog(
       context: context,
@@ -24,9 +29,14 @@ class CaptureSection extends StatelessWidget {
         return AlertDialog(
           title: const Text("Patient Information"),
           content: PatientForm(
-            onSubmit: (patientData) {
-              ApiService.submitPatientData(patientData, context);
+            onSubmit: (patientData) async {
+              final patientId = await ApiService.submitPatientData(patientData, context);
               Navigator.of(context).pop();
+              if (patientId != null && context.mounted) {
+                setState(() {
+                  _activePatientId = patientId;
+                });
+              }
             },
           ),
           actions: _buildDialogActions(context),
@@ -35,7 +45,6 @@ class CaptureSection extends StatelessWidget {
     );
   }
 
-  // Building the dialog actions
   List<Widget> _buildDialogActions(BuildContext context) {
     return [
       TextButton(
@@ -45,7 +54,6 @@ class CaptureSection extends StatelessWidget {
     ];
   }
 
-  // Building the buttons
   Widget _buildButtons(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
@@ -60,7 +68,7 @@ class CaptureSection extends StatelessWidget {
           screenWidth,
           screenHeight,
         ),
-        SizedBox(width: screenWidth * 0.05), // 5% of screen width
+        SizedBox(width: screenWidth * 0.05),
         _buildActionButton(
           context,
           "Capture Picture",
@@ -72,7 +80,6 @@ class CaptureSection extends StatelessWidget {
     );
   }
 
-  // Button styling
   Widget _buildActionButton(
     BuildContext context,
     String label,
@@ -81,8 +88,8 @@ class CaptureSection extends StatelessWidget {
     double screenHeight,
   ) {
     return SizedBox(
-      width: screenWidth * 0.25, // 25% of screen width
-      height: screenHeight * 0.1, // 10% of screen height
+      width: screenWidth * 0.25,
+      height: screenHeight * 0.1,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: utsaOrange,
@@ -96,7 +103,7 @@ class CaptureSection extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            fontSize: (screenWidth * 0.03).clamp(16, 40), // 5% of width, min 16px, max 40px
+            fontSize: (screenWidth * 0.03).clamp(16, 40),
           ),
         ),
       ),
@@ -117,7 +124,6 @@ class CaptureSection extends StatelessWidget {
     );
   }
 
-  // Live feed container
   Widget _buildLiveFeedContainer(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
@@ -130,12 +136,11 @@ class CaptureSection extends StatelessWidget {
       width: containerWidth,
       height: containerHeight,
       color: const Color.fromARGB(0, 158, 158, 158),
-      child: const VideoStreamPage(),
+      child: VideoStreamPage(activePatientId: _activePatientId),
     );
   }
 }
 
-// Patient Form Widget
 class PatientForm extends StatefulWidget {
   final Function(Map<String, dynamic>) onSubmit;
 
@@ -170,7 +175,6 @@ class _PatientFormState extends State<PatientForm> {
     );
   }
 
-  // Common text field builder
   Widget _buildTextField(String label, Function(String?) onSaved) {
     return TextFormField(
       decoration: InputDecoration(
@@ -187,7 +191,6 @@ class _PatientFormState extends State<PatientForm> {
     );
   }
 
-  // Date of Birth field
   Widget _buildDOBField() {
     return TextFormField(
       decoration: InputDecoration(
@@ -219,7 +222,6 @@ class _PatientFormState extends State<PatientForm> {
     );
   }
 
-  // Gender dropdown
   Widget _buildGenderDropdown() {
     return DropdownButtonFormField<String>(
       value: _gender.isEmpty ? null : _gender,
@@ -241,7 +243,6 @@ class _PatientFormState extends State<PatientForm> {
     );
   }
 
-  // Handle form submission
   void _handleSubmit() {
     final formState = _formKey.currentState;
     if (formState?.validate() ?? false) {
@@ -256,13 +257,12 @@ class _PatientFormState extends State<PatientForm> {
     }
   }
 
-  // Submit button for the form
   Widget _buildSubmitButton(BuildContext context, double screenWidth) {
     return Padding(
       padding: const EdgeInsets.only(top: 20),
       child: SizedBox(
-        width: screenWidth * 0.15, // 15% of screen width
-        height: screenWidth * 0.05, // Scales with width
+        width: screenWidth * 0.15,
+        height: screenWidth * 0.05,
         child: ElevatedButton(
           onPressed: _handleSubmit,
           style: ElevatedButton.styleFrom(
@@ -275,7 +275,7 @@ class _PatientFormState extends State<PatientForm> {
           child: Text(
             "Submit",
             style: TextStyle(
-              fontSize: (screenWidth * 0.05).clamp(14, 24), // 5% of width, min 14px, max 24px
+              fontSize: (screenWidth * 0.05).clamp(14, 24),
             ),
           ),
         ),

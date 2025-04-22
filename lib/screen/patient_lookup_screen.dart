@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/services/api.dart';
+import 'dart:math' show max;
 
 class PatientLookupScreen extends StatefulWidget {
   @override
@@ -10,6 +11,7 @@ class _PatientLookupScreenState extends State<PatientLookupScreen> {
   final TextEditingController _controller = TextEditingController();
   List<dynamic> _patients = [];
   String _patientResult = '';
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -18,15 +20,23 @@ class _PatientLookupScreenState extends State<PatientLookupScreen> {
   }
 
   Future<void> _fetchPatients() async {
-    List<dynamic> patients = await ApiService.fetchPatients(context);
-    setState(() {
-      _patients = patients;
-    });
+    setState(() => _isLoading = true);
+    try {
+      List<dynamic> patients = await ApiService.fetchPatients(context);
+      setState(() {
+        _patients = patients;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _patientResult = "Error fetching patients: $e";
+      });
+    }
   }
 
   void _performSearch() {
     String query = _controller.text.trim().toLowerCase();
-
     if (query.isEmpty) {
       setState(() {
         _patientResult = "Please enter a patient ID, first name, or last name.";
@@ -37,69 +47,98 @@ class _PatientLookupScreenState extends State<PatientLookupScreen> {
     var matches = _patients.where((patient) {
       String firstName = patient['first_name']?.toLowerCase() ?? '';
       String lastName = patient['last_name']?.toLowerCase() ?? '';
-      String id = patient['id'] ?? '';
-
-      // Match by first name, last name, or ID
+      String id = patient['id']?.toString() ?? '';
       return firstName.contains(query) || lastName.contains(query) || id == query;
     }).toList();
 
     setState(() {
-    if (matches.isNotEmpty) {
-      _patientResult = matches
-          .map((patient) => "${patient['first_name']} ${patient['last_name']} (ID: ${patient['id']})")
-          .join("\n"); // Display all matches
-    } else {
-      _patientResult = "No matching patient found.";
-    }
+      _patientResult = matches.isNotEmpty
+          ? matches
+              .map((patient) =>
+                  "${patient['first_name']} ${patient['last_name']} (ID: ${patient['id']})")
+              .join("\n")
+          : "No matching patient found.";
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       appBar: AppBar(
-          title: Text("Patient Lookup", style: TextStyle(color: Colors.white))),
+        title: Text("Patient Lookup", style: Theme.of(context).textTheme.titleLarge),
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            _buildTextField(),
-            SizedBox(height: 20),
-            _buildSearchButton(),
-            SizedBox(height: 20),
-            _buildPatientResult(),
-          ],
+        padding: EdgeInsets.all(screenWidth * 0.04),
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  _buildTextField(screenWidth),
+                  SizedBox(height: screenHeight * 0.02),
+                  _buildSearchButton(screenWidth, screenHeight),
+                  SizedBox(height: screenHeight * 0.02),
+                  _buildPatientResult(),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(double screenWidth) {
+    return Semantics(
+      label: 'Patient ID or Name input',
+      child: TextField(
+        controller: _controller,
+        style: TextStyle(fontSize: 20),
+        decoration: InputDecoration(
+          labelText: 'Enter Patient ID or Name',
+          labelStyle: TextStyle(fontSize: 20),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(width: 2),
+          ),
+          suffixIcon: IconButton(
+            icon: Icon(Icons.clear, size: 24),
+            onPressed: () {
+              _controller.clear();
+              setState(() => _patientResult = '');
+            },
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildTextField() {
-    return TextField(
-      controller: _controller,
-      decoration: InputDecoration(labelText: 'Enter Patient ID or Name'),
-    );
-  }
-
-  Widget _buildSearchButton() {
+  Widget _buildSearchButton(double screenWidth, double screenHeight) {
     return ElevatedButton(
       onPressed: _performSearch,
       style: ElevatedButton.styleFrom(
-        minimumSize: Size(200, 60),
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        textStyle: TextStyle(fontSize: 18),
-        backgroundColor: Color(0xFFF0F0F0),
+        minimumSize: Size(screenWidth * 0.6, max(screenHeight * 0.08, 60)),
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+        textStyle: TextStyle(fontSize: 35, fontWeight: FontWeight.bold),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
       ),
-      child: Text('Search'),
+      child: Text('Search', semanticsLabel: 'Search button'),
     );
   }
 
   Widget _buildPatientResult() {
     return _patientResult.isNotEmpty
-        ? Text(
-            _patientResult,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ? Expanded(
+            child: SingleChildScrollView(
+              child: Text(
+                _patientResult,
+                style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+              ),
+            ),
           )
         : Container();
   }
