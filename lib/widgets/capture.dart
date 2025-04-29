@@ -1,3 +1,5 @@
+// lib/widgets/capture.dart
+
 import 'package:flutter/material.dart';
 import '/services/api.dart';
 import '/widgets/theme.dart';
@@ -16,6 +18,7 @@ class _CaptureSectionState extends State<CaptureSection> {
   String? _activePatientId;
 
   void _capturePicture(BuildContext context) async {
+    // No args needed—backend will generate IDs
     List<dynamic> newImages = await ApiService.capturePicture(context);
     if (newImages.isNotEmpty) {
       widget.updateCapturedImages(newImages);
@@ -165,8 +168,8 @@ class _PatientFormState extends State<PatientForm> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildTextField("First Name", (value) => _firstName = value ?? ''),
-          _buildTextField("Last Name", (value) => _lastName = value ?? ''),
+          _buildTextField("First Name", (v) => _firstName = v ?? ''),
+          _buildTextField("Last Name", (v) => _lastName = v ?? ''),
           _buildDOBField(),
           _buildGenderDropdown(),
           _buildSubmitButton(context, screenWidth),
@@ -182,12 +185,8 @@ class _PatientFormState extends State<PatientForm> {
         hintText: 'Enter $label',
       ),
       onSaved: onSaved,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter $label';
-        }
-        return null;
-      },
+      validator: (v) =>
+          (v == null || v.isEmpty) ? 'Please enter $label' : null,
     );
   }
 
@@ -195,47 +194,34 @@ class _PatientFormState extends State<PatientForm> {
     return TextFormField(
       decoration: InputDecoration(
         labelText: 'Date of Birth',
-        hintText: _dob == null ? 'Select DOB' : _dob!.toLocal().toString().split(' ')[0],
+        hintText:
+            _dob == null ? 'Select DOB' : _dob!.toLocal().toString().split(' ')[0],
       ),
       onTap: () async {
-        DateTime? pickedDate = await showDatePicker(
+        DateTime? picked = await showDatePicker(
           context: context,
           initialDate: _dob ?? DateTime.now(),
           firstDate: DateTime(1900),
           lastDate: DateTime.now(),
         );
-        if (pickedDate != null) {
-          setState(() {
-            _dob = pickedDate;
-          });
-        }
+        if (picked != null) setState(() => _dob = picked);
       },
       controller: TextEditingController(
-          text: _dob == null ? '' : _dob!.toLocal().toString().split(' ')[0]),
+          text:
+              _dob == null ? '' : _dob!.toLocal().toString().split(' ')[0]),
       readOnly: true,
-      validator: (value) {
-        if (_dob == null) {
-          return 'Please select a date of birth';
-        }
-        return null;
-      },
+      validator: (_) =>
+          _dob == null ? 'Please select a date of birth' : null,
     );
   }
 
   Widget _buildGenderDropdown() {
     return DropdownButtonFormField<String>(
       value: _gender.isEmpty ? null : _gender,
-      onChanged: (value) {
-        setState(() {
-          _gender = value ?? '';
-        });
-      },
-      items: ['Male', 'Female'].map((String sex) {
-        return DropdownMenuItem<String>(
-          value: sex,
-          child: Text(sex),
-        );
-      }).toList(),
+      onChanged: (value) => setState(() => _gender = value ?? ''),
+      items: ['Male', 'Female']
+          .map((sex) => DropdownMenuItem(value: sex, child: Text(sex)))
+          .toList(),
       decoration: const InputDecoration(
         labelText: 'Sex',
         hintText: 'Select Option',
@@ -244,16 +230,14 @@ class _PatientFormState extends State<PatientForm> {
   }
 
   void _handleSubmit() {
-    final formState = _formKey.currentState;
-    if (formState?.validate() ?? false) {
-      formState?.save();
-      Map<String, dynamic> patientData = {
+    if ((_formKey.currentState?.validate() ?? false)) {
+      _formKey.currentState?.save();
+      widget.onSubmit({
         'first_name': _firstName,
         'last_name': _lastName,
         'dob': _dob?.toIso8601String(),
         'sex': _gender,
-      };
-      widget.onSubmit(patientData);
+      });
     }
   }
 

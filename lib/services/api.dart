@@ -33,21 +33,15 @@ class ApiService {
     return value;
   }
 
-  static Future<List<dynamic>> capturePicture(
-    BuildContext context, {
-    String? patientId,
-  }) async {
+  /// Capture picture. No payload—backend will generate `set_id` and `patient_id`.
+  static Future<List<dynamic>> capturePicture(BuildContext context) async {
     debugPrint('Using capturePictureUrl: $capturePictureUrl');
     try {
       final url = Uri.parse(capturePictureUrl);
-      final payload = {'set_id': null, 'patient_id': patientId};
-      debugPrint('Capture payload: $payload');
-
       final response = await http
           .post(
             url,
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(payload),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -108,6 +102,8 @@ class ApiService {
       return [];
     }
   }
+
+  // All other methods unchanged:
 
   static Future<List<dynamic>> fetchPatients(BuildContext context) async {
     final apiUrl = '$apiBaseUrl/patients';
