@@ -178,7 +178,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                           fontSize: 20, // Small title
                         ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 15),
                   if (_activePatient != null) ...[
                     Text(
                       '${_activePatient!['first_name'] ?? 'Unknown'} ${_activePatient!['last_name'] ?? ''}',
