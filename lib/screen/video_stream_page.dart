@@ -1,3 +1,5 @@
+// lib/screen/video_stream_page.dart
+
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -92,18 +94,14 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
       if (widget.activePatientId != null) {
         final patient = await ApiService.fetchPatientById(widget.activePatientId!, context);
         if (patient != null) {
-          setState(() {
-            _activePatient = patient;
-          });
+          setState(() => _activePatient = patient);
           return;
         }
       }
       // Fallback to latest patient
       final patients = await ApiService.fetchPatients(context);
       if (patients.isNotEmpty) {
-        setState(() {
-          _activePatient = patients.last;
-        });
+        setState(() => _activePatient = patients.last);
       }
     } catch (e) {
       debugPrint('Fetch patient error: $e');
@@ -119,112 +117,113 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final patientPanelWidth = screenWidth * 0.15; // 15% width
+    return LayoutBuilder(builder: (context, constraints) {
+      final panelWidth = constraints.maxWidth * 0.15;
 
-    return Stack(
-      children: [
-        // Centered Video Feed
-        Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                _isConnected ? 'Connected' : 'Connecting...',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: const Color.fromARGB(187, 255, 255, 255),
-                    ),
-              ),
-              const SizedBox(height: 20),
-              Expanded(
-                child: _currentFrame != null
-                    ? Image.memory(
-                        _currentFrame!,
-                        gaplessPlayback: true,
-                        fit: BoxFit.contain,
-                      )
-                    : const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: oddRed,
-                          strokeWidth: 2.5,
-                        ),
-                      ),
-              ),
-            ],
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ─── Active Patient Panel ───────────────────────────
+          Container(
+            width: panelWidth,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Color(0xFF5A8296).withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Active Patient',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(color: Colors.white, fontSize: 20),
+                ),
+                const SizedBox(height: 10),
+                if (_activePatient != null) ...[
+                  Text(
+                    '${_activePatient!['first_name'] ?? 'Unknown'} '
+                    '${_activePatient!['last_name'] ?? ''}',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: Colors.white, fontSize: 15),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    'ID: ${_activePatient!['id'] ?? 'N/A'}',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: Colors.white70, fontSize: 15),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    'DOB: ${_activePatient!['dob']?.split('T')[0] ?? 'N/A'}',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: Colors.white70, fontSize: 15),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    'Sex: ${_activePatient!['sex'] ?? 'N/A'}',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: Colors.white70, fontSize: 15),
+                  ),
+                ] else
+                  Text(
+                    'No Patient',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: Colors.white70, fontSize: 15),
+                  ),
+              ],
+            ),
           ),
-        ),
-        // Patient Panel near top-left of video feed
-        Positioned(
-          top: 16, // Small offset from top
-          left: 0, // Flush with left edge of video feed
-          child: IntrinsicHeight(
-            child: Container(
-              width: patientPanelWidth,
-              padding: const EdgeInsets.all(8), // Minimal padding
-              decoration: BoxDecoration(
-                color: Color(0xFF5A8296).withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(8), // Rounded corners
-              ),
+
+          // ─── Live Video Feed ────────────────────────────────
+          Expanded(
+            child: Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min, // Shrink to content
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Active Patient',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontSize: 20, // Small title
-                        ),
+                    _isConnected ? 'Connected' : 'Connecting...',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.copyWith(color: const Color.fromARGB(187, 255, 255, 255)),
                   ),
-                  const SizedBox(height: 15),
-                  if (_activePatient != null) ...[
-                    Text(
-                      '${_activePatient!['first_name'] ?? 'Unknown'} ${_activePatient!['last_name'] ?? ''}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white,
-                            fontSize: 15, // Small font
-                          ),
+                  const SizedBox(height: 20),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: constraints.maxWidth * 0.8,
+                      maxHeight: constraints.maxHeight * 0.8,
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      'ID: ${_activePatient!['id'] ?? 'N/A'}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white70,
-                            fontSize: 15,
+                    child: _currentFrame != null
+                        ? Image.memory(
+                            _currentFrame!,
+                            gaplessPlayback: true,
+                            fit: BoxFit.contain,
+                          )
+                        : const CircularProgressIndicator(
+                            color: oddRed,
+                            strokeWidth: 2.5,
                           ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      'DOB: ${_activePatient!['dob']?.split('T')[0] ?? 'N/A'}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white70,
-                            fontSize: 15,
-                          ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      'Sex: ${_activePatient!['sex'] ?? 'N/A'}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white70,
-                            fontSize: 15,
-                          ),
-                    ),
-                  ] else
-                    Text(
-                      'No Patient',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white70,
-                            fontSize: 15,
-                          ),
-                    ),
+                  ),
                 ],
               ),
             ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 }
