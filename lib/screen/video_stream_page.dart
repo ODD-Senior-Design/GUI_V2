@@ -39,22 +39,19 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
 
   void _connectToSocketIO() {
     try {
-      String socketIoUrl = dotenv.dotenv.isInitialized
-          ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://localhost:3000/stream'
+      final url = dotenv.dotenv.isInitialized
+          ? dotenv.dotenv.env['SOCKET_IO_URL']!
           : 'http://localhost:3000/stream';
-      _socket = IO.io(socketIoUrl, <String, dynamic>{
+      _socket = IO.io(url, {
         'transports': ['websocket'],
         'autoConnect': false,
         'reconnection': true,
         'reconnectionAttempts': 5,
       });
       _socket.connect();
-      _socket.onConnect((_) {
-        setState(() => _isConnected = true);
-        _socket.emit('join', 'video_stream_room');
-      });
+      _socket.onConnect((_) => setState(() => _isConnected = true));
       _socket.on('message', (data) {
-        if (data != null && data['frame'] != null) {
+        if (data?['frame'] != null) {
           try {
             final b64 = data['frame'].toString().split(',').last;
             setState(() => _currentFrame = base64Decode(b64));
@@ -92,14 +89,49 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final panelWidth = constraints.maxWidth * 0.15;
+    final screenWidth  = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final panelWidth   = screenWidth * 0.15;
 
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start, // ← no more stretch
-        children: [
-          // ─── Active Patient Panel ───────────────────────────
-          Container(
+    return Stack(
+      children: [
+        // ─── Centered feed ───────────────────────────────
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _isConnected ? 'Connected' : 'Connecting...',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: const Color.fromARGB(187, 255, 255, 255),
+                    ),
+              ),
+              const SizedBox(height: 20),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth:  screenWidth * 0.8,
+                  maxHeight: screenHeight * 0.8,
+                ),
+                child: _currentFrame != null
+                    ? Image.memory(
+                        _currentFrame!,
+                        gaplessPlayback: true,
+                        fit: BoxFit.contain,
+                      )
+                    : const CircularProgressIndicator(
+                        color: oddRed,
+                        strokeWidth: 2.5,
+                      ),
+              ),
+            ],
+          ),
+        ),
+
+        // ─── Floating Active Patient Panel ───────────────
+        Positioned(
+          top: 16,
+          left: 16, // pushes it slightly away from the very edge
+          child: Container(
             width: panelWidth,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -107,7 +139,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
-              mainAxisSize: MainAxisSize.min, // ← only as tall as its content
+              mainAxisSize: MainAxisSize.min, // only grow as tall as needed
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -121,7 +153,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                 if (_activePatient != null) ...[
                   Text(
                     '${_activePatient!['first_name'] ?? 'Unknown'} '
-                    '${_activePatient!['last_name'] ?? ''}',
+                    '${_activePatient!['last_name']  ?? ''}',
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
@@ -162,43 +194,8 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
               ],
             ),
           ),
-
-          // ─── Live Video Feed ────────────────────────────────
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _isConnected ? 'Connected' : 'Connecting...',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyLarge
-                        ?.copyWith(color: const Color.fromARGB(187, 255, 255, 255)),
-                  ),
-                  const SizedBox(height: 20),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: constraints.maxWidth * 0.8,
-                      maxHeight: constraints.maxHeight * 0.8,
-                    ),
-                    child: _currentFrame != null
-                        ? Image.memory(
-                            _currentFrame!,
-                            gaplessPlayback: true,
-                            fit: BoxFit.contain,
-                          )
-                        : const CircularProgressIndicator(
-                            color: oddRed,
-                            strokeWidth: 2.5,
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
-    });
+        ),
+      ],
+    );
   }
 }
