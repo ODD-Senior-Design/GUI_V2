@@ -18,7 +18,7 @@ class _CaptureSectionState extends State<CaptureSection> {
   String? _activePatientId;
 
   void _capturePicture(BuildContext context) async {
-    // No args needed—backend will generate IDs
+    // No arguments needed—API handles IDs internally
     List<dynamic> newImages = await ApiService.capturePicture(context);
     if (newImages.isNotEmpty) {
       widget.updateCapturedImages(newImages);
@@ -33,33 +33,28 @@ class _CaptureSectionState extends State<CaptureSection> {
           title: const Text("Patient Information"),
           content: PatientForm(
             onSubmit: (patientData) async {
-              final patientId = await ApiService.submitPatientData(patientData, context);
+              final patientId =
+                  await ApiService.submitPatientData(patientData, context);
               Navigator.of(context).pop();
               if (patientId != null && context.mounted) {
-                setState(() {
-                  _activePatientId = patientId;
-                });
+                setState(() => _activePatientId = patientId);
               }
             },
           ),
-          actions: _buildDialogActions(context),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Cancel"),
+            ),
+          ],
         );
       },
     );
   }
 
-  List<Widget> _buildDialogActions(BuildContext context) {
-    return [
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(),
-        child: const Text("Cancel"),
-      ),
-    ];
-  }
-
   Widget _buildButtons(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
+    final w = MediaQuery.of(context).size.width;
+    final h = MediaQuery.of(context).size.height;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -68,16 +63,16 @@ class _CaptureSectionState extends State<CaptureSection> {
           context,
           "Add Patient",
           () => _showPatientForm(context),
-          screenWidth,
-          screenHeight,
+          w,
+          h,
         ),
-        SizedBox(width: screenWidth * 0.05),
+        SizedBox(width: w * 0.05),
         _buildActionButton(
           context,
           "Capture Picture",
           () => _capturePicture(context),
-          screenWidth,
-          screenHeight,
+          w,
+          h,
         ),
       ],
     );
@@ -105,9 +100,7 @@ class _CaptureSectionState extends State<CaptureSection> {
         onPressed: onPressed,
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: (screenWidth * 0.03).clamp(16, 40),
-          ),
+          style: TextStyle(fontSize: (screenWidth * 0.03).clamp(16, 40)),
         ),
       ),
     );
@@ -128,16 +121,13 @@ class _CaptureSectionState extends State<CaptureSection> {
   }
 
   Widget _buildLiveFeedContainer(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
-
-    double containerWidth = screenWidth * 0.75;
-    double containerHeight = screenHeight * 0.55;
+    final w = MediaQuery.of(context).size.width;
+    final h = MediaQuery.of(context).size.height;
 
     return Container(
       margin: const EdgeInsets.all(15),
-      width: containerWidth,
-      height: containerHeight,
+      width: w * 0.75,
+      height: h * 0.55,
       color: const Color.fromARGB(0, 158, 158, 158),
       child: VideoStreamPage(activePatientId: _activePatientId),
     );
@@ -162,7 +152,7 @@ class _PatientFormState extends State<PatientForm> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final w = MediaQuery.of(context).size.width;
     return Form(
       key: _formKey,
       child: Column(
@@ -172,7 +162,7 @@ class _PatientFormState extends State<PatientForm> {
           _buildTextField("Last Name", (v) => _lastName = v ?? ''),
           _buildDOBField(),
           _buildGenderDropdown(),
-          _buildSubmitButton(context, screenWidth),
+          _buildSubmitButton(context, w),
         ],
       ),
     );
@@ -180,13 +170,9 @@ class _PatientFormState extends State<PatientForm> {
 
   Widget _buildTextField(String label, Function(String?) onSaved) {
     return TextFormField(
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: 'Enter $label',
-      ),
+      decoration: InputDecoration(labelText: label, hintText: 'Enter $label'),
       onSaved: onSaved,
-      validator: (v) =>
-          (v == null || v.isEmpty) ? 'Please enter $label' : null,
+      validator: (v) => (v == null || v.isEmpty) ? 'Please enter $label' : null,
     );
   }
 
@@ -194,11 +180,15 @@ class _PatientFormState extends State<PatientForm> {
     return TextFormField(
       decoration: InputDecoration(
         labelText: 'Date of Birth',
-        hintText:
-            _dob == null ? 'Select DOB' : _dob!.toLocal().toString().split(' ')[0],
+        hintText: _dob == null
+            ? 'Select DOB'
+            : _dob!.toLocal().toString().split(' ')[0],
       ),
+      controller: TextEditingController(
+          text: _dob == null ? '' : _dob!.toLocal().toString().split(' ')[0]),
+      readOnly: true,
       onTap: () async {
-        DateTime? picked = await showDatePicker(
+        final picked = await showDatePicker(
           context: context,
           initialDate: _dob ?? DateTime.now(),
           firstDate: DateTime(1900),
@@ -206,26 +196,18 @@ class _PatientFormState extends State<PatientForm> {
         );
         if (picked != null) setState(() => _dob = picked);
       },
-      controller: TextEditingController(
-          text:
-              _dob == null ? '' : _dob!.toLocal().toString().split(' ')[0]),
-      readOnly: true,
-      validator: (_) =>
-          _dob == null ? 'Please select a date of birth' : null,
+      validator: (_) => _dob == null ? 'Please select a date of birth' : null,
     );
   }
 
   Widget _buildGenderDropdown() {
     return DropdownButtonFormField<String>(
       value: _gender.isEmpty ? null : _gender,
-      onChanged: (value) => setState(() => _gender = value ?? ''),
+      onChanged: (v) => setState(() => _gender = v ?? ''),
       items: ['Male', 'Female']
           .map((sex) => DropdownMenuItem(value: sex, child: Text(sex)))
           .toList(),
-      decoration: const InputDecoration(
-        labelText: 'Sex',
-        hintText: 'Select Option',
-      ),
+      decoration: const InputDecoration(labelText: 'Sex', hintText: 'Select Option'),
     );
   }
 
@@ -252,15 +234,11 @@ class _PatientFormState extends State<PatientForm> {
           style: ElevatedButton.styleFrom(
             backgroundColor: utsaOrange,
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(40),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
           ),
           child: Text(
             "Submit",
-            style: TextStyle(
-              fontSize: (screenWidth * 0.05).clamp(14, 24),
-            ),
+            style: TextStyle(fontSize: (screenWidth * 0.05).clamp(14, 24)),
           ),
         ),
       ),
