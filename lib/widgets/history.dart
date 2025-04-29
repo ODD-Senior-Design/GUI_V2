@@ -1,127 +1,109 @@
+// lib/widgets/history.dart
+
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 class HistorySection extends StatelessWidget {
   final List<dynamic> capturedImages;
 
-  const HistorySection({super.key, required this.capturedImages});
+  const HistorySection({Key? key, required this.capturedImages})
+      : super(key: key);
 
-  // Function to show enlarged image in a pop-out dialog
-  void _showImageDialog(BuildContext context, String imageUri) {
+  Uint8List _decodeBase64(String data) {
+    final commaIndex = data.indexOf(',');
+    final base64Str =
+        commaIndex != -1 ? data.substring(commaIndex + 1) : data;
+    return base64Decode(base64Str);
+  }
+
+  void _showImageDialog(BuildContext context, String base64Data) {
+    final bytes = _decodeBase64(base64Data);
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return Dialog(
-          backgroundColor: Color.fromRGBO(0, 0, 0, 0.8), 
-          child: _buildImageDialogContent(imageUri, context),
+          backgroundColor: const Color.fromRGBO(0, 0, 0, 0.8),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.memory(bytes, fit: BoxFit.contain),
+                const SizedBox(height: 20),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ),
         );
-      },
-    );
-  }
-
-  // Widget to handle image dialog
-  Widget _buildImageDialogContent(String imageUri, BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildDialogImage(imageUri),
-          SizedBox(height: 20),
-          _buildCloseButton(context),
-        ],
-      ),
-    );
-  }
-
-  // Widget to display the image in the dialog
-  Widget _buildDialogImage(String imageUri) {
-    return Image.network(
-      imageUri,
-      fit: BoxFit.contain,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) {
-          return child;
-        } else {
-          return Center(child: CircularProgressIndicator());
-        }
-      },
-      errorBuilder: (context, error, stackTrace) {
-        return Center(child: Icon(Icons.error, color: Colors.red));
-      },
-    );
-  }
-
-  // Widget to build the close button in the dialog
-  Widget _buildCloseButton(BuildContext context) {
-    return IconButton(
-      icon: Icon(Icons.close, color: Colors.white, size: 30),
-      onPressed: () {
-        Navigator.of(context).pop(); // Close the dialog
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return capturedImages.isEmpty
-        ? Center(child: Text("No history"))
-        : _buildGridView(context);
-  }
+    if (capturedImages.isEmpty) {
+      return const Center(child: Text("No history"));
+    }
 
-  // Widget to build the GridView
-  Widget _buildGridView(BuildContext context) {
     return GridView.builder(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 10.0,
-        mainAxisSpacing: 10.0,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 0.8,
       ),
       itemCount: capturedImages.length,
       itemBuilder: (context, index) {
-        final imageItem = capturedImages[index];
-        final patient = imageItem['image']['image_set']?['patient'];
-        final imageUri = imageItem['image']['uri'];
-
-        if (patient == null || imageUri == null) {
-          return Center(child: Text("Invalid data received"));
+        final item = capturedImages[index];
+        final patient = item['image']['image_set']?['patient'];
+        final base64Data = item['image']['base64'];
+        if (patient == null || base64Data == null) {
+          return const Center(child: Text("Invalid data received"));
         }
+        final bytes = _decodeBase64(base64Data);
 
-        return _buildImagePreview(context, imageUri, patient);
+        return GestureDetector(
+          onTap: () => _showImageDialog(context, base64Data),
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  "${patient['first_name']} ${patient['last_name']}",
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 20),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Patient ID: ${patient['id']}",
+                  style: const TextStyle(
+                      fontSize: 14,
+                      color: Color.fromARGB(255, 89, 86, 86)),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: Image.memory(
+                    bytes,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (ctx, err, stack) =>
+                        const Center(child: Icon(Icons.error, color: Colors.red)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
       },
-    );
-  }
-
-  // Widget to build each image preview in the GridView
-  Widget _buildImagePreview(BuildContext context, String imageUri, dynamic patient) {
-    return GestureDetector(
-      onTap: () => _showImageDialog(context, imageUri), // Trigger dialog on tap
-      child: Container(
-        margin: EdgeInsets.only(bottom: 30, right: 10, left: 10),
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text("${patient['first_name']} ${patient['last_name']}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 40)),
-            SizedBox(height: 4),
-            Text("Patient ID: ${patient['id']}", style: TextStyle(fontSize: 25, color: const Color.fromARGB(255, 89, 86, 86))),
-            SizedBox(height: 8),
-            _buildImagePreviewThumbnail(imageUri),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Widget to build the image thumbnail in the GridView
-  Widget _buildImagePreviewThumbnail(String imageUri) {
-    return Image.network(
-      imageUri,
-      width: 650, // Adjudt image size
-      height: 650, 
-      fit: BoxFit.cover,
-      loadingBuilder: (context, child, loadingProgress) =>
-          loadingProgress == null ? child : Center(child: CircularProgressIndicator()),
-      errorBuilder: (context, error, stackTrace) => Center(child: Icon(Icons.error, color: Colors.red)),
     );
   }
 }
