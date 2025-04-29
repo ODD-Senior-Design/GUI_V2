@@ -164,7 +164,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
               width: patientPanelWidth,
               padding: const EdgeInsets.all(8), // Minimal padding
               decoration: BoxDecoration(
-                color: const Color(0xFF5A8296).withOpacity(0.7), // Subtle, semi-transparent
+                color: Color(0xFF5A8296).withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(8), // Rounded corners
               ),
               child: Column(
@@ -172,43 +172,43 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                 mainAxisSize: MainAxisSize.min, // Shrink to content
                 children: [
                   Text(
-                    'Patient',
+                    'Active Patient',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: Colors.white,
-                          fontSize: 14, // Small title
+                          fontSize: 20, // Small title
                         ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 10),
                   if (_activePatient != null) ...[
                     Text(
                       '${_activePatient!['first_name'] ?? 'Unknown'} ${_activePatient!['last_name'] ?? ''}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.white,
-                            fontSize: 12, // Small font
+                            fontSize: 15, // Small font
                           ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
                       'ID: ${_activePatient!['id'] ?? 'N/A'}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.white70,
-                            fontSize: 12,
+                            fontSize: 15,
                           ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
                       'DOB: ${_activePatient!['dob']?.split('T')[0] ?? 'N/A'}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.white70,
-                            fontSize: 12,
+                            fontSize: 15,
                           ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
                       'Sex: ${_activePatient!['sex'] ?? 'N/A'}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.white70,
-                            fontSize: 12,
+                            fontSize: 15,
                           ),
                     ),
                   ] else
@@ -216,7 +216,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                       'No Patient',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.white70,
-                            fontSize: 12,
+                            fontSize: 15,
                           ),
                     ),
                 ],
