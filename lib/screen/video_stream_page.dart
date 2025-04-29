@@ -42,67 +42,42 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
       String socketIoUrl = dotenv.dotenv.isInitialized
           ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://localhost:3000/stream'
           : 'http://localhost:3000/stream';
-      debugPrint('Connecting to Socket.IO at: $socketIoUrl');
       _socket = IO.io(socketIoUrl, <String, dynamic>{
         'transports': ['websocket'],
         'autoConnect': false,
         'reconnection': true,
         'reconnectionAttempts': 5,
       });
-
       _socket.connect();
-
       _socket.onConnect((_) {
         setState(() => _isConnected = true);
-        debugPrint('Connected to Socket.IO server at $socketIoUrl');
         _socket.emit('join', 'video_stream_room');
       });
-
       _socket.on('message', (data) {
-        debugPrint('Received video frame data: $data');
         if (data != null && data['frame'] != null) {
-          String base64String = data['frame'].toString().split(',').last;
           try {
-            setState(() {
-              _currentFrame = base64Decode(base64String);
-            });
-          } catch (e) {
-            debugPrint('Error decoding base64 frame: $e');
-          }
+            final b64 = data['frame'].toString().split(',').last;
+            setState(() => _currentFrame = base64Decode(b64));
+          } catch (_) {}
         }
       });
-
-      _socket.onDisconnect((_) {
-        setState(() => _isConnected = false);
-        debugPrint('Disconnected from Socket.IO server');
-      });
-
-      _socket.onError((error) {
-        debugPrint('Socket.IO Error: $error');
-      });
-
-      _socket.onConnectError((error) {
-        debugPrint('Connection Error: $error');
-      });
+      _socket.onDisconnect((_) => setState(() => _isConnected = false));
     } catch (e) {
-      debugPrint('Socket initialization error: $e');
+      debugPrint('Socket init error: $e');
     }
   }
 
   Future<void> _fetchActivePatient() async {
     try {
       if (widget.activePatientId != null) {
-        final patient = await ApiService.fetchPatientById(widget.activePatientId!, context);
-        if (patient != null) {
-          setState(() => _activePatient = patient);
+        final p = await ApiService.fetchPatientById(widget.activePatientId!, context);
+        if (p != null) {
+          setState(() => _activePatient = p);
           return;
         }
       }
-      // Fallback to latest patient
-      final patients = await ApiService.fetchPatients(context);
-      if (patients.isNotEmpty) {
-        setState(() => _activePatient = patients.last);
-      }
+      final list = await ApiService.fetchPatients(context);
+      if (list.isNotEmpty) setState(() => _activePatient = list.last);
     } catch (e) {
       debugPrint('Fetch patient error: $e');
     }
@@ -121,7 +96,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
       final panelWidth = constraints.maxWidth * 0.15;
 
       return Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start, // ← no more stretch
         children: [
           // ─── Active Patient Panel ───────────────────────────
           Container(
@@ -132,8 +107,8 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min, // ← only as tall as its content
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'Active Patient',
