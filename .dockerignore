@@ -1,43 +1,35 @@
-*.yaml
-!pubspec.yaml
-# OS & editor metadata
+# ── Ignore IDE & VCS metadata ───────────────────────────
 .vscode/
-.history/
-.metadata
+.idea/
+.git/
+.gitignore
 
-# Dart & Flutter build artifacts
+# ── Ignore Flutter/mobile build artifacts & caches ────
 build/
-build-arm64-output/
 .dart_tool/
 .packages
-.flutter-plugins
-.flutter-plugins-dependencies
+.flutter-plugins*
 .flutter-versions
+.flutter-plugins-dependencies
 
-# Flutter platform directories (not needed for web build)
+# ── Ignore platform-specific code (Web only!) ───────────
 android/
 ios/
 linux/
 macos/
 windows/
 
-# Git
-.git/
-.gitignore
+# ── Keep your app’s code & web entrypoint ──────────────
+!pubspec.yaml
+!pubspec.lock
+!lib/**
+!web/**
+!assets/**             # if you have an assets/ folder referenced in pubspec.yaml
 
-# Docker
-docker-compose.yaml
-Dockerfile*
-.dockerignore
+# ── Keep your Docker definitions ────────────────────────
+!Dockerfile
+!docker-compose.yml
+!.dockerignore
 
-# Shell scripts and config
-*.sh
-*.conf
-.devtools_options.yaml
-.analysis_options.yaml
-.builddeploy.conf
-
-# Documentation
-README.md
-
-!lib/main.dart
+# Anything else is useless for the container build
+*
