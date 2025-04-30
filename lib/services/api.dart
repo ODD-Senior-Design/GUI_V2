@@ -13,12 +13,12 @@ class ApiService {
       : 'http://localhost:5000';
 
   static String get capturePictureUrl => dotenv.dotenv.isInitialized
-      ? dotenv.dotenv.env['CAPTURE_PICTURE_URL'] ?? 'http://localhost:5000/images'
-      : 'http://localhost:5000/images';
+      ? dotenv.dotenv.env['CAPTURE_PICTURE_URL'] ?? '$apiBaseUrl/images'
+      : '$apiBaseUrl/images';
 
-  static String get socketIoUrl => dotenv.dotenv.isInitialized
-      ? dotenv.dotenv.env['SOCKET_IO_URL'] ?? 'http://localhost:3000/stream'
-      : 'http://localhost:3000/stream';
+  static String get assessmentsUrl => dotenv.dotenv.isInitialized
+      ? dotenv.dotenv.env['ASSESSMENTS_URL'] ?? '$apiBaseUrl/assessments'
+      : '$apiBaseUrl/assessments';
 
   static dynamic _makeSerializable(dynamic value) {
     if (value is Set) return value.toList();
@@ -27,76 +27,84 @@ class ApiService {
     return value;
   }
 
-  /// Capture picture.
-  /// Sends an empty JSON {} so backend can generate both set_id and patient_id.
+  /// 1) Capture pictures (`{}` payload) → backend generates IDs & returns URIs
   static Future<List<dynamic>> capturePicture(BuildContext context) async {
     final url = Uri.parse(capturePictureUrl);
-    final payload = jsonEncode({});                      // <-- empty JSON
-    debugPrint('📤 POST to $capturePictureUrl');
-    debugPrint('📦 Request body: $payload');
+    final payload = jsonEncode({});
+    debugPrint('POST $capturePictureUrl → $payload');
 
     try {
       final response = await http
-          .post(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: payload,
-          )
+          .post(url, headers: {'Content-Type': 'application/json'}, body: payload)
           .timeout(const Duration(seconds: 10));
-
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📄 Body: ${response.body}');
 
       if (response.statusCode != 200) {
         final body = response.body;
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to Capture Image: ${response.statusCode} — $body')),
+            SnackBar(content: Text('Failed to Capture: ${response.statusCode} — $body')),
           );
         }
         return [];
       }
 
-      final rawData = jsonDecode(response.body);
-      final items = rawData is List ? rawData : [rawData];
-      final withBase64 = <dynamic>[];
+      final raw = jsonDecode(response.body);
+      final items = (raw is List ? raw : [raw]).cast<dynamic>();
 
+      // fetch each image as base64
       for (var item in items) {
-        final uriString = item['image']?['uri'];
-        if (uriString != null) {
+        final uri = item['image']?['uri'];
+        if (uri != null) {
           try {
-            final imgResp = await http.get(Uri.parse(uriString));
+            final imgResp = await http.get(Uri.parse(uri));
             if (imgResp.statusCode == 200) {
-              final b64 = base64Encode(imgResp.bodyBytes);
-              item['image']['base64'] = 'data:image/png;base64,$b64';
+              item['image']['base64'] =
+                  'data:image/png;base64,${base64Encode(imgResp.bodyBytes)}';
             }
           } catch (e) {
-            debugPrint('Error fetching image bytes: $e');
+            debugPrint('Error fetching image: $e');
           }
         }
-        withBase64.add(item);
       }
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Image Captured Successfully!')));
-      }
-      return withBase64;
+      return items;
     } catch (e) {
-      debugPrint('⚠️ Capture error: $e');
+      debugPrint('Capture exception: $e');
       if (context.mounted) {
-        String err = 'Capture Error: $e';
-        if (e is SocketException) {
-          err = 'No Internet connection. Please check your network.';
-        } else if (e is TimeoutException) {
-          err = 'Request timed out. Please try again.';
-        }
+        String err = e is SocketException
+            ? 'No network connection.'
+            : e is TimeoutException
+                ? 'Request timed out.'
+                : 'Error: $e';
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
       }
       return [];
     }
   }
 
+  /// 2) Assess a single image via `/assessments`
+  static Future<Map<String, dynamic>?> assessImage(
+      String base64Image, BuildContext context) async {
+    final url = Uri.parse(assessmentsUrl);
+    final body = jsonEncode({'image': base64Image});
+    debugPrint('POST $assessmentsUrl → [base64 image]');
+
+    try {
+      final resp = await http
+          .post(url, headers: {'Content-Type': 'application/json'}, body: body)
+          .timeout(const Duration(seconds: 10));
+
+      if (resp.statusCode != 200) {
+        debugPrint('Assessment failed ${resp.statusCode}: ${resp.body}');
+        return null;
+      }
+      return jsonDecode(resp.body) as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('Assessment exception: $e');
+      return null;
+    }
+  }
+
+  /// Fetch list of patients
   static Future<List<dynamic>> fetchPatients(BuildContext context) async {
     final apiUrl = '$apiBaseUrl/patients';
     debugPrint('Fetching patients from: $apiUrl');
@@ -109,86 +117,76 @@ class ApiService {
         final jsonResponse = jsonDecode(response.body);
         debugPrint('Response body: ${response.body}');
         if (jsonResponse.isEmpty && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No Patients Found')),
-          );
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('No Patients Found')));
         }
         return jsonResponse is List ? jsonResponse : [];
       } else {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to Fetch Patients: ${response.statusCode}')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Failed to Fetch Patients: ${response.statusCode}')));
         }
         return [];
       }
     } catch (e) {
       debugPrint('Fetch error: $e');
       if (context.mounted) {
-        String err = 'Fetch Error: $e';
-        if (e is SocketException) {
-          err = 'No Internet connection. Please check your network.';
-        } else if (e is TimeoutException) {
-          err = 'Request timed out. Please try again.';
-        }
+        String err = e is SocketException
+            ? 'No network connection.'
+            : e is TimeoutException
+                ? 'Request timed out.'
+                : 'Error: $e';
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
       }
       return [];
     }
   }
 
+  /// Submit new patient data
   static Future<String?> submitPatientData(
-    Map<String, dynamic> patientData,
-    BuildContext context,
-  ) async {
+      Map<String, dynamic> patientData, BuildContext context) async {
     final apiUrl = '$apiBaseUrl/patients';
     debugPrint('Submitting to: $apiUrl');
     try {
       final serializableData = _makeSerializable(patientData);
       final url = Uri.parse(apiUrl);
       final response = await http
-          .post(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(serializableData),
-          )
+          .post(url,
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode(serializableData))
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Patient Added Successfully!')),
-          );
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('Patient Added Successfully!')));
         }
         final data = jsonDecode(response.body);
         return data['id']?.toString() ?? data['patient_id']?.toString();
       } else {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to Add Patient: ${response.statusCode}')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Failed to Add Patient: ${response.statusCode}')));
         }
         return null;
       }
     } catch (e) {
       debugPrint('Submit error: $e');
       if (context.mounted) {
-        String err = 'Submit Error: $e';
-        if (e is SocketException) {
-          err = 'No Internet connection. Please check your network.';
-        } else if (e is TimeoutException) {
-          err = 'Request timed out. Please try again.';
-        }
+        String err = e is SocketException
+            ? 'No network connection.'
+            : e is TimeoutException
+                ? 'Request timed out.'
+                : 'Error: $e';
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
       }
       return null;
     }
   }
 
+  /// Fetch single patient by ID
   static Future<Map<String, dynamic>?> fetchPatientById(
-    String patientId,
-    BuildContext context,
-  ) async {
+      String patientId, BuildContext context) async {
     final apiUrl = '$apiBaseUrl/patients/$patientId';
     debugPrint('Fetching patient from: $apiUrl');
     try {
@@ -196,24 +194,22 @@ class ApiService {
       final response =
           await http.get(url).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to Fetch Patient: ${response.statusCode}')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Failed to Fetch Patient: ${response.statusCode}')));
         }
         return null;
       }
     } catch (e) {
       debugPrint('Fetch by ID error: $e');
       if (context.mounted) {
-        String err = 'Fetch Error: $e';
-        if (e is SocketException) {
-          err = 'No Internet connection. Please check your network.';
-        } else if (e is TimeoutException) {
-          err = 'Request timed out. Please try again.';
-        }
+        String err = e is SocketException
+            ? 'No network connection.'
+            : e is TimeoutException
+                ? 'Request timed out.'
+                : 'Error: $e';
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
       }
       return null;
