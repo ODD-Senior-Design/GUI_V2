@@ -1,11 +1,15 @@
-# Ignore everything…
+# ─── Ignore everything by default ────────────────────────
 *
 
-# …except these files/folders needed for the build
+# ─── But allow these for the build ─────────────────────
 !Dockerfile
+!docker-compose.yml      # if you use compose
+!.dockerignore
 !pubspec.yaml
 !pubspec.lock
 !lib/**
 !web/**
-!assets/**
-!.dockerignore
+!assets/**               # only if you reference assets/ in pubspec
+
+# ─── Optional extras (docs, configs) ───────────────────
+!README.md
