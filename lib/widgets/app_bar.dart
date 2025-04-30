@@ -4,9 +4,9 @@ import 'package:namer_app/widgets/theme.dart';
 
 PreferredSizeWidget customAppBar(Function onItemTapped, int selectedIndex) {
   return AppBar(
-    toolbarHeight: 130,
+    toolbarHeight: 150,
     backgroundColor: utsaOrange,
-    elevation: 0,
+    elevation: 5,
     title: _CustomAppBarContent(onItemTapped: onItemTapped),
   );
 }
@@ -34,7 +34,7 @@ class _CustomAppBarContent extends StatelessWidget {
   Positioned _buildPositionedLogo(double screenHeight, double screenWidth) {
     return Positioned(
       top: screenHeight * -0.13,  // Padding
-      left: screenWidth * -0.04,
+      left: screenWidth * -0.05,
       child: SvgPicture.asset(
         'assets/images/O.D.D..svg',
         height: screenHeight * 0.36,  // Sizing
@@ -46,7 +46,7 @@ class _CustomAppBarContent extends StatelessWidget {
   Positioned _buildPositionedUTSALogo(double screenHeight, double screenWidth) {
     return Positioned(
       top: 0, // Padding
-      right: 0,
+      right: -2,
       child: SvgPicture.asset(
         'assets/images/utsa-roadrunners-seeklogo.svg',
         height: screenHeight * 0.1,  // Sizing
