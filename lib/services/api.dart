@@ -12,14 +12,16 @@ class ApiService {
       ? dotenv.dotenv.env['API_BASE_URL'] ?? 'http://localhost:5000'
       : 'http://localhost:5000';
 
-  static String get startSessionUrl   => '$apiBaseUrl/images_sets';
+  static String get startSessionUrl => '$apiBaseUrl/images_sets';
   static String get capturePictureUrl => '$apiBaseUrl/images';
-  static String get assessmentsUrl    => '$apiBaseUrl/assessments';
+  static String get assessmentsUrl => '$apiBaseUrl/assessments';
 
   static dynamic _makeSerializable(dynamic value) {
     if (value is Set) return value.toList();
-    if (value is Map) return value.map((k, v) => MapEntry(k, _makeSerializable(v)));
-    if (value is Iterable && value is! String) return value.map(_makeSerializable).toList();
+    if (value is Map)
+      return value.map((k, v) => MapEntry(k, _makeSerializable(v)));
+    if (value is Iterable && value is! String)
+      return value.map(_makeSerializable).toList();
     return value;
   }
 
@@ -125,7 +127,8 @@ class ApiService {
             : e is TimeoutException
                 ? 'Request timed out.'
                 : 'Error: $e';
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(err)));
       }
       return [];
     }
@@ -183,11 +186,14 @@ class ApiService {
         }
         return data;
       } else {
+        debugPrint(
+          'submitPatientData failed: ${response.statusCode} — ${response.body}',
+        );
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Failed to Add Patient: ${response.statusCode}',
+                'Failed to Add Patient: ${response.statusCode} - ${response.body}',
               ),
             ),
           );
@@ -219,8 +225,7 @@ class ApiService {
     debugPrint('Fetching patients from: $apiUrl');
     try {
       final url = Uri.parse(apiUrl);
-      final response =
-          await http.get(url).timeout(const Duration(seconds: 10));
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         if (jsonResponse.isEmpty && context.mounted) {
@@ -267,8 +272,7 @@ class ApiService {
     debugPrint('Fetching patient from: $apiUrl');
     try {
       final url = Uri.parse(apiUrl);
-      final response =
-          await http.get(url).timeout(const Duration(seconds: 10));
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
@@ -302,4 +306,3 @@ class ApiService {
     }
   }
 }
-
