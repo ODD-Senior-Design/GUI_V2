@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:namer_app/widgets/theme.dart';
+import '../widgets/theme.dart';
 
 PreferredSizeWidget customAppBar(Function onItemTapped, int selectedIndex) {
   return AppBar(
