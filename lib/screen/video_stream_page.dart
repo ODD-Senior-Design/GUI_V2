@@ -95,7 +95,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
 
     return Stack(
       children: [
-        // ─── Centered feed ───────────────────────────────
+        // ─── Centered (now smaller) feed ─────────────────
         Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -109,8 +109,8 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
               const SizedBox(height: 20),
               ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth:  screenWidth * 0.8,
-                  maxHeight: screenHeight * 0.8,
+                  maxWidth:  screenWidth * 0.5,  
+                  maxHeight: screenHeight * 0.5,  
                 ),
                 child: _currentFrame != null
                     ? Image.memory(
@@ -130,7 +130,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
         // ─── Floating Active Patient Panel ───────────────
         Positioned(
           top: 16,
-          left: 16, // pushes it slightly away from the very edge
+          left: 16,
           child: Container(
             width: panelWidth,
             padding: const EdgeInsets.all(8),
@@ -139,7 +139,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
-              mainAxisSize: MainAxisSize.min, // only grow as tall as needed
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -153,7 +153,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                 if (_activePatient != null) ...[
                   Text(
                     '${_activePatient!['first_name'] ?? 'Unknown'} '
-                    '${_activePatient!['last_name']  ?? ''}',
+                    '${_activePatient!['last_name'] ?? ''}',
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium

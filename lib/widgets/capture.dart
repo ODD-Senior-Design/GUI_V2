@@ -18,15 +18,15 @@ class CaptureSection extends StatefulWidget {
 class _CaptureSectionState extends State<CaptureSection> {
   String? _activePatientId;
 
-  /// 1) Capture images, 2) run AI assess on each, 3) return the list
-  Future<void> _captureAndAssess(BuildContext context) async {
-    final images = await ApiService.capturePicture(context);
+  /// 1) Capture images, 2) assess via AI, 3) return list with assessments
+  Future<void> _captureAndAssess(BuildContext ctx) async {
+    final images = await ApiService.capturePicture(ctx);
     if (images.isEmpty) return;
 
     for (var item in images) {
       final b64 = item['image']?['base64'];
       if (b64 != null) {
-        final result = await ApiService.assessImage(b64, context);
+        final result = await ApiService.assessImage(b64, ctx);
         item['assessment'] = result;
       }
     }
@@ -34,18 +34,17 @@ class _CaptureSectionState extends State<CaptureSection> {
     widget.updateCapturedImages(images);
   }
 
-  /// Show the “Add Patient” dialog
+  /// Show and handle the Add Patient dialog
   void _showPatientForm(BuildContext context) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text("Patient Information"),
         content: PatientForm(onSubmit: (patientData) async {
-          final id =
-              await ApiService.submitPatientData(patientData, context);
+          final created = await ApiService.submitPatientData(patientData, context);
           Navigator.of(context).pop();
-          if (id != null && context.mounted) {
-            setState(() => _activePatientId = id);
+          if (created != null && context.mounted) {
+            setState(() => _activePatientId = created['id']?.toString());
           }
         }),
         actions: [
@@ -72,20 +71,18 @@ class _CaptureSectionState extends State<CaptureSection> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Add Patient button
               _actionButton(
                 context,
                 "Add Patient",
-                () => _showPatientForm(context),  // <-- wrapped
+                () => _showPatientForm(context),
                 w,
                 h,
               ),
               SizedBox(width: w * 0.05),
-              // Capture & Assess button
               _actionButton(
                 context,
                 "Capture & Assess",
-                () => _captureAndAssess(context),  // <-- wrapped
+                () => _captureAndAssess(context),
                 w,
                 h,
               ),
@@ -99,13 +96,13 @@ class _CaptureSectionState extends State<CaptureSection> {
   Widget _actionButton(
     BuildContext context,
     String label,
-    VoidCallback onPressed,         // now a true VoidCallback
-    double screenWidth,
-    double screenHeight,
+    VoidCallback onTap,
+    double w,
+    double h,
   ) {
     return SizedBox(
-      width: screenWidth * 0.25,
-      height: screenHeight * 0.1,
+      width: w * 0.25,
+      height: h * 0.1,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: utsaOrange,
@@ -114,20 +111,15 @@ class _CaptureSectionState extends State<CaptureSection> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
           padding: const EdgeInsets.all(8),
         ),
-        onPressed: onPressed,       // matches VoidCallback
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: (screenWidth * 0.03).clamp(16, 40),
-          ),
-        ),
+        onPressed: onTap,
+        child: Text(label, style: TextStyle(fontSize: (w * 0.03).clamp(16, 40))),
       ),
     );
   }
 
-  Widget _buildLiveFeedContainer(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-    final h = MediaQuery.of(context).size.height;
+  Widget _buildLiveFeedContainer(BuildContext c) {
+    final w = MediaQuery.of(c).size.width;
+    final h = MediaQuery.of(c).size.height;
     return Container(
       margin: const EdgeInsets.all(15),
       width: w * 0.75,
@@ -179,14 +171,10 @@ class _PatientFormState extends State<PatientForm> {
           TextFormField(
             decoration: InputDecoration(
               labelText: 'Date of Birth',
-              hintText: _dob == null
-                  ? 'Select DOB'
-                  : _dob!.toLocal().toString().split(' ')[0],
+              hintText: _dob == null ? 'Select DOB' : _dob!.toLocal().toString().split(' ')[0],
             ),
             controller: TextEditingController(
-                text: _dob == null
-                    ? ''
-                    : _dob!.toLocal().toString().split(' ')[0]),
+                text: _dob == null ? '' : _dob!.toLocal().toString().split(' ')[0]),
             readOnly: true,
             onTap: () async {
               final picked = await showDatePicker(
@@ -204,14 +192,9 @@ class _PatientFormState extends State<PatientForm> {
             value: _gender.isEmpty ? null : _gender,
             onChanged: (v) => setState(() => _gender = v ?? ''),
             items: ['Male', 'Female']
-                .map((sex) => DropdownMenuItem(
-                    value: sex,
-                    child: Text(sex)))
+                .map((sex) => DropdownMenuItem(value: sex, child: Text(sex)))
                 .toList(),
-            decoration: const InputDecoration(
-              labelText: 'Sex',
-              hintText: 'Select Option',
-            ),
+            decoration: const InputDecoration(labelText: 'Sex', hintText: 'Select Option'),
           ),
           Padding(
             padding: const EdgeInsets.only(top: 20),
@@ -233,13 +216,11 @@ class _PatientFormState extends State<PatientForm> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: utsaOrange,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(40)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
                 ),
                 child: Text(
                   "Submit",
-                  style:
-                      TextStyle(fontSize: (w * 0.05).clamp(14, 24)),
+                  style: TextStyle(fontSize: (w * 0.05).clamp(14, 24)),
                 ),
               ),
             ),
