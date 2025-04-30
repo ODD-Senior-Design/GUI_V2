@@ -1,42 +1,26 @@
-*.yaml
-!pubspec.yaml
-# OS & editor metadata
+# IDE / VCS
 .vscode/
-.history/
-# .metadata
+.idea/
+.git
+.gitignore
 
-# Dart & Flutter build artifacts
+# Flutter build artifacts
 build/
-build-arm64-output/
 .dart_tool/
 .packages
 .flutter-plugins
 .flutter-plugins-dependencies
 .flutter-versions
 
-# Flutter platform directories (not needed for web build)
+# Platform dirs (if you're only building for web or desktop in Docker)
 android/
 ios/
 linux/
 macos/
 windows/
 
-# Git
-.git/
-.gitignore
-
-# Docker
-docker-compose.yaml
-Dockerfile*
-.dockerignore
-
-# Shell scripts and config
+# Other misc
+.history/
+.metadata
 *.sh
 *.conf
-.devtools_options.yaml
-.analysis_options.yaml
-.builddeploy.conf
-
-# Documentation
-README.md
-
