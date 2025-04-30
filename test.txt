@@ -1,0 +1,76 @@
+*.yaml
+!pubspec.yaml
+# OS & editor metadata
+.vscode/
+.history/
+.metadata
+
+# Dart & Flutter build artifacts
+build/
+build-arm64-output/
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-versions
+
+# Flutter platform directories (not needed for web build)
+android/
+ios/
+linux/
+macos/
+windows/
+
+# Git
+.git/
+.gitignore
+
+# Docker
+docker-compose.yaml
+Dockerfile*
+.dockerignore
+
+# Shell scripts and config
+*.sh
+*.conf
+.devtools_options.yaml
+.analysis_options.yaml
+.builddeploy.conf
+
+# Documentation
+README.md
+
+-------------------------------------------
+
+
+
+# ignore IDE & Git
+.vscode/
+.idea/
+.git/
+/.gitignore
+
+# ignore build artifacts & temp
+build/
+.dart_tool/
+.packages
+.flutter-plugins*
+.flutter-versions
+.history/
+.metadata
+
+# ignore platform folders (unless you need them)
+android/
+ios/
+linux/
+macos/
+windows/
+
+# keep essential files
+!pubspec.yaml
+!pubspec.lock
+!lib/**
+!assets/**
+!web/**
+!Dockerfile
+!docker-compose.yml

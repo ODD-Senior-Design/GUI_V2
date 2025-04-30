@@ -1,26 +1,31 @@
-# IDE / VCS
+# ignore IDE & Git
 .vscode/
 .idea/
-.git
-.gitignore
+.git/
+/.gitignore
 
-# Flutter build artifacts
+# ignore build artifacts & temp
 build/
 .dart_tool/
 .packages
-.flutter-plugins
-.flutter-plugins-dependencies
+.flutter-plugins*
 .flutter-versions
+.history/
+.metadata
+test.txt
 
-# Platform dirs (if you're only building for web or desktop in Docker)
+# ignore platform folders (unless you need them)
 android/
 ios/
 linux/
 macos/
 windows/
 
-# Other misc
-.history/
-.metadata
-*.sh
-*.conf
+# keep essential files
+!pubspec.yaml
+!pubspec.lock
+!lib/**
+!assets/**
+!web/**
+!Dockerfile
+!docker-compose.yml
