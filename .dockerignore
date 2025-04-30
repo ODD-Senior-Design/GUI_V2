@@ -1,35 +1,11 @@
-# ── Ignore IDE & VCS metadata ───────────────────────────
-.vscode/
-.idea/
-.git/
-.gitignore
+# Ignore everything…
+*
 
-# ── Ignore Flutter/mobile build artifacts & caches ────
-build/
-.dart_tool/
-.packages
-.flutter-plugins*
-.flutter-versions
-.flutter-plugins-dependencies
-
-# ── Ignore platform-specific code (Web only!) ───────────
-android/
-ios/
-linux/
-macos/
-windows/
-
-# ── Keep your app’s code & web entrypoint ──────────────
+# …except these files/folders needed for the build
+!Dockerfile
 !pubspec.yaml
 !pubspec.lock
 !lib/**
 !web/**
-!assets/**             # if you have an assets/ folder referenced in pubspec.yaml
-
-# ── Keep your Docker definitions ────────────────────────
-!Dockerfile
-!docker-compose.yml
+!assets/**
 !.dockerignore
-
-# Anything else is useless for the container build
-*
