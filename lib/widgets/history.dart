@@ -7,8 +7,7 @@ import 'package:flutter/material.dart';
 class HistorySection extends StatelessWidget {
   final List<dynamic> capturedImages;
 
-  const HistorySection({Key? key, required this.capturedImages})
-      : super(key: key);
+  const HistorySection({super.key, required this.capturedImages});
 
   Uint8List _decodeBase64(String data) {
     final commaIndex = data.indexOf(',');

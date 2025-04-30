@@ -8,7 +8,7 @@ import '/screen/video_stream_page.dart';
 class CaptureSection extends StatefulWidget {
   final Function(List<dynamic>) updateCapturedImages;
 
-  const CaptureSection({Key? key, required this.updateCapturedImages}) : super(key: key);
+  const CaptureSection({super.key, required this.updateCapturedImages});
 
   @override
   State<CaptureSection> createState() => _CaptureSectionState();
@@ -138,7 +138,7 @@ class _CaptureSectionState extends State<CaptureSection> {
 class PatientForm extends StatefulWidget {
   final Function(Map<String, dynamic>) onSubmit;
 
-  const PatientForm({Key? key, required this.onSubmit}) : super(key: key);
+  const PatientForm({super.key, required this.onSubmit});
 
   @override
   State<PatientForm> createState() => _PatientFormState();
