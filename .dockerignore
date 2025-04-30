@@ -3,7 +3,7 @@
 # OS & editor metadata
 .vscode/
 .history/
-.metadata
+# .metadata
 
 # Dart & Flutter build artifacts
 build/
