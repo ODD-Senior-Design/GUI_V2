@@ -1,28 +1,42 @@
-# Flutter build output
-build/
-.webdev/
-.dart_tool/
-
-# Dart package folders
-.packages
-
-# IDE/editor files
-.idea/
+*.yaml
+!pubspec.yaml
+# OS & editor metadata
 .vscode/
-*.iml
+.history/
+.metadata
 
-# Mac and Linux junk files
-.DS_Store
-*.swp
-*.swo
+# Dart & Flutter build artifacts
+build/
+build-arm64-output/
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-versions
 
-# Git files
+# Flutter platform directories (not needed for web build)
+android/
+ios/
+linux/
+macos/
+windows/
+
+# Git
 .git/
 .gitignore
 
-# Test, assets, and example folders if not needed in build
-test/
-example/
+# Docker
+docker-compose.yaml
+Dockerfile*
+.dockerignore
 
-# Logs
-*.log
+# Shell scripts and config
+*.sh
+*.conf
+.devtools_options.yaml
+.analysis_options.yaml
+.builddeploy.conf
+
+# Documentation
+README.md
+
