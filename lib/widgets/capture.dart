@@ -5,7 +5,7 @@ import '/services/api.dart';
 import '/widgets/theme.dart';
 import '/screen/video_stream_page.dart';
 
-/// CaptureSection:
+
 /// A section widget that handles selecting/adding a patient, capturing images,
 /// performing AI assessment, and returning the results to its parent.
 class CaptureSection extends StatefulWidget {
@@ -124,7 +124,7 @@ class _CaptureSectionState extends State<CaptureSection> {
               _actionButton('Add Patient', _showPatientForm, w, h),
               SizedBox(width: w * 0.05),
               _actionButton(
-                'Capture',
+                'Capture Image',
                 // Disable button if no patient selected
                 _activePatientId != null
                     ? () => _captureAndAssess(context)
