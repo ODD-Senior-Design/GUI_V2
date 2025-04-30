@@ -1,15 +1,28 @@
-# ─── Ignore everything by default ────────────────────────
-*
+ Flutter build output
+build/
+.webdev/
+.dart_tool/
 
-# ─── But allow these for the build ─────────────────────
-!Dockerfile
-!docker-compose.yml      # if you use compose
-!.dockerignore
-!pubspec.yaml
-!pubspec.lock
-!lib/**
-!web/**
-!assets/**               # only if you reference assets/ in pubspec
+# Dart package folders
+.packages
 
-# ─── Optional extras (docs, configs) ───────────────────
-!README.md
+# IDE/editor files
+.idea/
+.vscode/
+*.iml
+
+# Mac and Linux junk files
+.DS_Store
+*.swp
+*.swo
+
+# Git files
+.git/
+.gitignore
+
+# Test, assets, and example folders if not needed in build
+test/
+example/
+
+# Logs
+*.log

@@ -8,8 +8,7 @@ import '/screen/video_stream_page.dart';
 class CaptureSection extends StatefulWidget {
   final Function(List<dynamic>) updateCapturedImages;
 
-  const CaptureSection({Key? key, required this.updateCapturedImages})
-      : super(key: key);
+  const CaptureSection({Key? key, required this.updateCapturedImages}) : super(key: key);
 
   @override
   State<CaptureSection> createState() => _CaptureSectionState();
@@ -21,15 +20,29 @@ class _CaptureSectionState extends State<CaptureSection> {
 
   /// 1) Capture images, 2) assess via AI, 3) return list with assessments
   Future<void> _captureAndAssess(BuildContext ctx) async {
-    
-    if ( _activeSetId == null )
-        final _activeSetId = ApiService.startSession(ctx)[ 'set_id' ];
+    // Ensure a patient is selected
+    if (_activePatientId == null) return;
 
-    final ids = { 'patient_id': _activePatientId, 'set_id': _activeSetId };
-    
-    final images = await ApiService.capturePicture(ids, ctx);
+    // Start a new session if not already started
+    if (_activeSetId == null) {
+      final session = await ApiService.startSession(_activePatientId!, ctx);
+      if (session == null) return;
+      setState(() {
+        _activeSetId = session['set_id']?.toString();
+      });
+    }
+
+    // Prepare payload
+    final payload = {
+      'patient_id': _activePatientId,
+      'set_id': _activeSetId,
+    };
+
+    // Capture images
+    final images = await ApiService.capturePicture(payload, ctx);
     if (images.isEmpty) return;
 
+    // Assess each image
     for (var item in images) {
       final b64 = item['image']?['base64'];
       if (b64 != null) {
@@ -38,26 +51,30 @@ class _CaptureSectionState extends State<CaptureSection> {
       }
     }
 
+    // Return to parent
     widget.updateCapturedImages(images);
   }
 
-  /// Show and handle the Add Patient dialog
-  void _showPatientForm(BuildContext context) {
+  /// Show form to add/select a patient
+  void _showPatientForm() {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Patient Information"),
-        content: PatientForm(onSubmit: (patientData) async {
-          final created = await ApiService.submitPatientData(patientData, context);
+        title: const Text('Patient Information'),
+        content: PatientForm(onSubmit: (data) async {
+          final created = await ApiService.submitPatientData(data, context);
           Navigator.of(context).pop();
           if (created != null && context.mounted) {
-            setState(() => _activePatientId = created['id']?.toString());
+            setState(() {
+              _activePatientId = created['id']?.toString();
+              _activeSetId = null; // reset session for new patient
+            });
           }
         }),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text("Cancel"),
+            child: const Text('Cancel'),
           ),
         ],
       ),
@@ -73,26 +90,14 @@ class _CaptureSectionState extends State<CaptureSection> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildLiveFeedContainer(context),
+          _buildLiveFeed(),
           const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _actionButton(
-                context,
-                "Add Patient",
-                () => _showPatientForm(context),
-                w,
-                h,
-              ),
+              _actionButton('Add Patient', _showPatientForm, w, h),
               SizedBox(width: w * 0.05),
-              _actionButton(
-                context,
-                "Capture & Assess",
-                () => _captureAndAssess(context),
-                w,
-                h,
-              ),
+              _actionButton('Capture', () => _captureAndAssess(context), w, h),
             ],
           ),
         ],
@@ -100,13 +105,7 @@ class _CaptureSectionState extends State<CaptureSection> {
     );
   }
 
-  Widget _actionButton(
-    BuildContext context,
-    String label,
-    VoidCallback onTap,
-    double w,
-    double h,
-  ) {
+  Widget _actionButton(String label, VoidCallback onPressed, double w, double h) {
     return SizedBox(
       width: w * 0.25,
       height: h * 0.1,
@@ -114,19 +113,17 @@ class _CaptureSectionState extends State<CaptureSection> {
         style: ElevatedButton.styleFrom(
           backgroundColor: utsaOrange,
           foregroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
-          padding: const EdgeInsets.all(8),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
         ),
-        onPressed: onTap,
+        onPressed: onPressed,
         child: Text(label, style: TextStyle(fontSize: (w * 0.03).clamp(16, 40))),
       ),
     );
   }
 
-  Widget _buildLiveFeedContainer(BuildContext c) {
-    final w = MediaQuery.of(c).size.width;
-    final h = MediaQuery.of(c).size.height;
+  Widget _buildLiveFeed() {
+    final w = MediaQuery.of(context).size.width;
+    final h = MediaQuery.of(context).size.height;
     return Container(
       margin: const EdgeInsets.all(15),
       width: w * 0.75,
@@ -137,6 +134,7 @@ class _CaptureSectionState extends State<CaptureSection> {
   }
 }
 
+/// PatientForm widget remains unchanged
 class PatientForm extends StatefulWidget {
   final Function(Map<String, dynamic>) onSubmit;
 
@@ -162,26 +160,18 @@ class _PatientFormState extends State<PatientForm> {
         mainAxisSize: MainAxisSize.min,
         children: [
           TextFormField(
-            decoration: const InputDecoration(
-                labelText: 'First Name', hintText: 'Enter First Name'),
+            decoration: const InputDecoration(labelText: 'First Name', hintText: 'Enter First Name'),
             onSaved: (v) => _firstName = v ?? '',
-            validator: (v) =>
-                (v == null || v.isEmpty) ? 'Please enter First Name' : null,
+            validator: (v) => (v == null || v.isEmpty) ? 'Please enter First Name' : null,
           ),
           TextFormField(
-            decoration: const InputDecoration(
-                labelText: 'Last Name', hintText: 'Enter Last Name'),
+            decoration: const InputDecoration(labelText: 'Last Name', hintText: 'Enter Last Name'),
             onSaved: (v) => _lastName = v ?? '',
-            validator: (v) =>
-                (v == null || v.isEmpty) ? 'Please enter Last Name' : null,
+            validator: (v) => (v == null || v.isEmpty) ? 'Please enter Last Name' : null,
           ),
           TextFormField(
-            decoration: InputDecoration(
-              labelText: 'Date of Birth',
-              hintText: _dob == null ? 'Select DOB' : _dob!.toLocal().toString().split(' ')[0],
-            ),
-            controller: TextEditingController(
-                text: _dob == null ? '' : _dob!.toLocal().toString().split(' ')[0]),
+            decoration: InputDecoration(labelText: 'Date of Birth', hintText: _dob == null ? 'Select DOB' : _dob!.toLocal().toString().split(' ')[0]),
+            controller: TextEditingController(text: _dob == null ? '' : _dob!.toLocal().toString().split(' ')[0]),
             readOnly: true,
             onTap: () async {
               final picked = await showDatePicker(
@@ -192,15 +182,12 @@ class _PatientFormState extends State<PatientForm> {
               );
               if (picked != null) setState(() => _dob = picked);
             },
-            validator: (_) =>
-                _dob == null ? 'Please select a date of birth' : null,
+            validator: (_) => _dob == null ? 'Please select a date of birth' : null,
           ),
           DropdownButtonFormField<String>(
             value: _gender.isEmpty ? null : _gender,
             onChanged: (v) => setState(() => _gender = v ?? ''),
-            items: ['Male', 'Female']
-                .map((sex) => DropdownMenuItem(value: sex, child: Text(sex)))
-                .toList(),
+            items: ['Male', 'Female'].map((sex) => DropdownMenuItem(value: sex, child: Text(sex))).toList(),
             decoration: const InputDecoration(labelText: 'Sex', hintText: 'Select Option'),
           ),
           Padding(
@@ -225,10 +212,7 @@ class _PatientFormState extends State<PatientForm> {
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
                 ),
-                child: Text(
-                  "Submit",
-                  style: TextStyle(fontSize: (w * 0.05).clamp(14, 24)),
-                ),
+                child: Text('Submit', style: TextStyle(fontSize: (w * 0.05).clamp(14, 24))),
               ),
             ),
           ),
@@ -237,3 +221,4 @@ class _PatientFormState extends State<PatientForm> {
     );
   }
 }
+
