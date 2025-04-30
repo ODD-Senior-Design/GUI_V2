@@ -12,6 +12,7 @@ class ApiService {
       ? dotenv.dotenv.env['API_BASE_URL'] ?? 'http://localhost:5000'
       : 'http://localhost:5000';
 
+  static String get startSessionUrl   => '$apiBaseUrl/imaeg_sets'
   static String get capturePictureUrl => '$apiBaseUrl/images';
   static String get assessmentsUrl    => '$apiBaseUrl/assessments';
 
@@ -22,10 +23,33 @@ class ApiService {
     return value;
   }
 
+  static Future<Map<String, dynamic>?> startSession( String patient_id, BuildContext ctx ) async {
+
+    final url = Uri.parse(startSessionUrl);
+    final payload = jsonEncode( { 'patient_id': patient_id } );
+    debugPrint( 'POST $startSessionUrl → $payload' )
+    try {
+      final response = await http
+          .post(url, headers: {'Content-Type': 'application/json'}, body: payload)
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        final body = response.body;
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to Start Session: ${response.statusCode} — $body')),
+          );
+        }
+        
+      }
+      return jsonDecode(response.body) as Map<String, dynamic>;
+
+  }
+
   /// 1) Capture pictures (`{}` payload) → backend generates IDs & returns URIs
-  static Future<List<dynamic>> capturePicture(BuildContext context) async {
+  static Future<List<dynamic>> capturePicture(Map<String, dynamic> imageData, BuildContext context) async {
     final url = Uri.parse(capturePictureUrl);
-    final payload = jsonEncode({});
+    final payload = jsonEncode(imageData);
     debugPrint('POST $capturePictureUrl → $payload');
 
     try {
@@ -80,7 +104,7 @@ class ApiService {
   static Future<Map<String, dynamic>?> assessImage(
       String base64Image, BuildContext context) async {
     final url = Uri.parse(assessmentsUrl);
-    final body = jsonEncode({'image': base64Image});
+    final body = jsonEncode({'base64_image': base64Image});
     debugPrint('POST $assessmentsUrl → [base64 image]');
 
     try {

@@ -17,10 +17,17 @@ class CaptureSection extends StatefulWidget {
 
 class _CaptureSectionState extends State<CaptureSection> {
   String? _activePatientId;
+  String? _activeSetId;
 
   /// 1) Capture images, 2) assess via AI, 3) return list with assessments
   Future<void> _captureAndAssess(BuildContext ctx) async {
-    final images = await ApiService.capturePicture(ctx);
+    
+    if ( _activeSetId == null )
+        final _activeSetId = ApiService.startSession(ctx)[ 'set_id' ];
+
+    final ids = { 'patient_id': _activePatientId, 'set_id': _activeSetId };
+    
+    final images = await ApiService.capturePicture(ids, ctx);
     if (images.isEmpty) return;
 
     for (var item in images) {
