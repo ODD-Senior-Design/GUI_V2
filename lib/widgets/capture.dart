@@ -5,7 +5,6 @@ import '/services/api.dart';
 import '/widgets/theme.dart';
 import '/screen/video_stream_page.dart';
 
-
 /// A section widget that handles selecting/adding a patient, capturing images,
 /// performing AI assessment, and returning the results to its parent.
 class CaptureSection extends StatefulWidget {
@@ -41,9 +40,10 @@ class _CaptureSectionState extends State<CaptureSection> {
     // Start a new session if this is the first capture
     if (_activeSetId == null) {
       final session = await ApiService.startSession(_activePatientId!, ctx);
+      debugPrint(session.toString());
       if (session == null) return;
       setState(() {
-        _activeSetId = session['set_id']?.toString();
+        _activeSetId = session['id'].toString();
       });
     }
 
@@ -229,8 +229,7 @@ class _PatientFormState extends State<PatientForm> {
             value: _gender.isEmpty ? null : _gender,
             onChanged: (v) => setState(() => _gender = v ?? ''),
             items: ['Male', 'Female']
-                .map((sex) => DropdownMenuItem(
-                    value: sex, child: Text(sex)))
+                .map((sex) => DropdownMenuItem(value: sex, child: Text(sex)))
                 .toList(),
             decoration: const InputDecoration(
                 labelText: 'Sex', hintText: 'Select Option'),
@@ -260,8 +259,7 @@ class _PatientFormState extends State<PatientForm> {
                       borderRadius: BorderRadius.circular(40)),
                 ),
                 child: Text('Submit',
-                    style:
-                        TextStyle(fontSize: (w * 0.05).clamp(14.0, 24.0))),
+                    style: TextStyle(fontSize: (w * 0.05).clamp(14.0, 24.0))),
               ),
             ),
           ),

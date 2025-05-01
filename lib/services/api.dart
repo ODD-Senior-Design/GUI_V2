@@ -12,7 +12,7 @@ class ApiService {
       ? dotenv.dotenv.env['API_BASE_URL'] ?? 'http://localhost:5000'
       : 'http://localhost:5000';
 
-  static String get startSessionUrl => '$apiBaseUrl/images_sets';
+  static String get startSessionUrl => '$apiBaseUrl/image_sets';
   static String get capturePictureUrl => '$apiBaseUrl/images';
   static String get assessmentsUrl => '$apiBaseUrl/assessments';
 
