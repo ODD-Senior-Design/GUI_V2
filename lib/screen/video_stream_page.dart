@@ -130,9 +130,9 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
         // ─── Floating Active Patient Panel ───────────────
         Positioned(
           top: 16,
-          left: 2,
+          left: -2,
           child: Container(
-            width: panelWidth,
+            width: 235, //panelWidth,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: Color(0xFF5A8296).withValues(alpha: 0.7),
@@ -195,6 +195,8 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
             ),
           ),
         ),
+        // ----------------Floating Accessments-------------------
+        
       ],
     );
   }

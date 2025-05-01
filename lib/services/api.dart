@@ -88,16 +88,29 @@ class ApiService {
           )
           .timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Captured Image Successfully!')),
-          );
-        }
-        return data;
-      }
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final data = jsonDecode(response.body) as Map<String, dynamic>;
+          if (context.mounted) {
 
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                padding: const EdgeInsets.all(16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                content: Container(
+                  height: 60,               // ↑ bump this up as you like
+                  alignment: Alignment.centerLeft,
+                child: Text('Captured Image Successfully!!',
+                style: const TextStyle(fontSize: 18),),
+                )
+              ),
+            );
+          }
+          return data;
+        }
       if (response.statusCode != 200) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -149,7 +162,18 @@ class ApiService {
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Assessed image; Verdict: $verdict'),
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                padding: const EdgeInsets.all(16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                content: Container(
+                  height: 60,               // ↑ bump this up as you like
+                  alignment: Alignment.centerLeft,
+                child: Text('Assessed image; Verdict: $verdict',
+                style: const TextStyle(fontSize: 18),),
+                )
               ),
             );
           }
