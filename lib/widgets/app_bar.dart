@@ -4,7 +4,7 @@ import '../widgets/theme.dart';
 
 PreferredSizeWidget customAppBar(Function onItemTapped, int selectedIndex) {
   return AppBar(
-    toolbarHeight: 170,
+    toolbarHeight: 175,
     backgroundColor: utsaOrange,
     elevation: 5,
     title: _CustomAppBarContent(onItemTapped: onItemTapped),

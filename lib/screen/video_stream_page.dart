@@ -130,7 +130,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
         // ─── Floating Active Patient Panel ───────────────
         Positioned(
           top: 16,
-          left: 16,
+          left: 2,
           child: Container(
             width: panelWidth,
             padding: const EdgeInsets.all(8),
@@ -147,7 +147,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                   style: Theme.of(context)
                       .textTheme
                       .titleMedium
-                      ?.copyWith(color: Colors.white, fontSize: 20),
+                      ?.copyWith(color: Colors.white, fontSize: 25),
                 ),
                 const SizedBox(height: 10),
                 if (_activePatient != null) ...[
@@ -157,7 +157,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: Colors.white, fontSize: 15),
+                        ?.copyWith(color: Colors.white, fontSize: 20),
                   ),
                   const SizedBox(height: 5),
                   Text(
@@ -165,7 +165,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: Colors.white70, fontSize: 15),
+                        ?.copyWith(color: Colors.white70, fontSize: 20),
                   ),
                   const SizedBox(height: 5),
                   Text(
@@ -173,7 +173,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: Colors.white70, fontSize: 15),
+                        ?.copyWith(color: Colors.white70, fontSize: 20),
                   ),
                   const SizedBox(height: 5),
                   Text(
@@ -181,7 +181,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: Colors.white70, fontSize: 15),
+                        ?.copyWith(color: Colors.white70, fontSize: 20),
                   ),
                 ] else
                   Text(
@@ -189,7 +189,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: Colors.white70, fontSize: 15),
+                        ?.copyWith(color: Colors.white70, fontSize: 25),
                   ),
               ],
             ),
