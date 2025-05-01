@@ -54,20 +54,20 @@ class _CaptureSectionState extends State<CaptureSection> {
     };
 
     // Perform image capture
-    final images = await ApiService.capturePicture(payload, ctx);
-    if (images.isEmpty) return;
+    Map<String, dynamic>? image = await ApiService.capturePicture(payload, ctx);
+    if (image == null) return;
 
-    // Optionally assess each image via AI endpoint
-    for (var item in images) {
-      final b64 = item['image']?['base64'];
-      if (b64 != null) {
-        final result = await ApiService.assessImage(b64, ctx);
-        item['assessment'] = result;
-      }
-    }
+    image.remove('image_timestamp');
+    image.remove('uri');
+    image['image_id'] = image.remove('id');
+    image['base64_image'] = image.remove('image_b64');
+    image['base64_image'] = (image['base64_image'] as String)
+        .replaceAll('data:image/jpeg;base64,', '');
+
+    final assessment = await ApiService.assessImage(image, ctx);
 
     // Send results back to parent widget
-    widget.updateCapturedImages(images);
+    // widget.updateCapturedImages(images);
   }
 
   /// Displays a dialog form for adding or selecting a patient

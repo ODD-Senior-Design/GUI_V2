@@ -73,7 +73,7 @@ class ApiService {
   }
 
   /// 1) Capture pictures (`imageData` contains session and patient IDs)
-  static Future<List<dynamic>> capturePicture(
+  static Future<Map<String, dynamic>?> capturePicture(
       Map<String, dynamic> imageData, BuildContext context) async {
     final url = Uri.parse(capturePictureUrl);
     final payload = jsonEncode(imageData);
@@ -88,6 +88,16 @@ class ApiService {
           )
           .timeout(const Duration(seconds: 10));
 
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Captured Image Successfully!')),
+          );
+        }
+        return data;
+      }
+
       if (response.statusCode != 200) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -98,27 +108,8 @@ class ApiService {
             ),
           );
         }
-        return [];
+        return null;
       }
-
-      final raw = jsonDecode(response.body);
-      final items = (raw is List ? raw : [raw]).cast<dynamic>();
-
-      for (var item in items) {
-        final uriString = item['image']?['uri'];
-        if (uriString != null) {
-          try {
-            final imgResp = await http.get(Uri.parse(uriString));
-            if (imgResp.statusCode == 200) {
-              item['image']['base64'] =
-                  'data:image/png;base64,${base64Encode(imgResp.bodyBytes)}';
-            }
-          } catch (e) {
-            debugPrint('Error fetching image: $e');
-          }
-        }
-      }
-      return items;
     } catch (e) {
       debugPrint('Capture exception: $e');
       if (context.mounted) {
@@ -130,31 +121,47 @@ class ApiService {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(err)));
       }
-      return [];
+      return null;
     }
+    return null;
   }
 
   /// 2) Assess a single image via `/assessments`
   static Future<Map<String, dynamic>?> assessImage(
-      String base64Image, BuildContext context) async {
+      Map<String, dynamic> payload, BuildContext context) async {
     final url = Uri.parse(assessmentsUrl);
-    final body = jsonEncode({'base64_image': base64Image});
-    debugPrint('POST $assessmentsUrl → [base64 image]');
+    final body = jsonEncode(payload);
+    debugPrint('POST $assessmentsUrl → [payload]');
 
     try {
-      final resp = await http
+      final response = await http
           .post(
             url,
             headers: {'Content-Type': 'application/json'},
             body: body,
           )
           .timeout(const Duration(seconds: 10));
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final data = jsonDecode(response.body) as Map<String, dynamic>;
+          if (context.mounted) {
+            // build the verdict string first
+            final verdict = (data['assessment'] as bool) ? 'Positive' : 'Negative';
 
-      if (resp.statusCode != 200) {
-        debugPrint('Assessment failed ${resp.statusCode}: ${resp.body}');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Assessed image; Verdict: $verdict'),
+              ),
+            );
+          }
+          return data;
+        }
+
+      if (response.statusCode != 200) {
+        debugPrint(
+            'Assessment failed ${response.statusCode}: ${response.body}');
         return null;
       }
-      return jsonDecode(resp.body) as Map<String, dynamic>;
+      return jsonDecode(response.body) as Map<String, dynamic>;
     } catch (e) {
       debugPrint('Assessment exception: $e');
       return null;
